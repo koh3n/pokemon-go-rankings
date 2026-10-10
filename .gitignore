@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+pogo_cache/*
+!pogo_cache/iv_data.json
+all_rankings.json.tmp
