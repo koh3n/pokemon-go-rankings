@@ -466,7 +466,7 @@ function renderTable() {
     const hasIv = !!RESULT.ivs && rows.some(r => r.iv);
     $("table").innerHTML = `<table><thead><tr><th>#</th><th>Pokémon</th><th>Mode</th><th>Tier</th><th>Rank</th>${hasIv ? "<th>Your IV rank</th>" : ""}</tr></thead><tbody>` +
       rows.map((r, i) => `<tr><td class="num">${i + 1}</td>
-        <td>${sprite(r.slug)}<a href="https://db.pokemongohub.net/pokemon/${encodeURIComponent(r.slug)}" target="_blank" rel="noopener" style="color:inherit">${esc(r.pokemon)}</a>${xlinks(r.slug)}</td>
+        <td>${sprite(r.slug)}<a href="https://db.pokemongohub.net/pokemon/${encodeURIComponent(r.slug)}" target="_blank" rel="noopener" style="color:inherit">${esc(r.pokemon)}</a>${xlinks(r.slug, r.pokemon, r.mode)}</td>
         <td>${esc(r.mode)}</td>
         <td><span class="badge tier-${esc(r.tier[0].toLowerCase())}">${esc(r.tier)}</span></td>
         <td class="rank">${r.rank == null ? "" : "#" + r.rank}</td>${hasIv ? ivCell(r.iv) : ""}</tr>`).join("") +
@@ -490,15 +490,48 @@ function sprite(slugOrDex, cls = "") {
     loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">`;
 }
 
-// Per-Pokémon links: Pokémon DB (by Pokédex number, it redirects to the name
-// page) and the GO Hub IV chart. slug may be a plain dex number or a form slug.
-function xlinks(slug) {
+// PvPoke ranking pages by league. Only rows whose mode is a league get a link.
+const PVPOKE_CP = {"Great League": 1500, "Ultra League": 2500, "Master League": 10000};
+const PVPOKE_SPECIAL = {
+  "black kyurem": "kyurem_black", "white kyurem": "kyurem_white",
+  "dusk mane necrozma": "necrozma_dusk_mane", "dawn wings necrozma": "necrozma_dawn_wings",
+  "crowned sword zacian": "zacian_crowned_sword", "crowned shield zamazenta": "zamazenta_crowned_shield",
+  "zygarde complete form": "zygarde_complete",
+};
+
+// Best-effort GO Hub display name -> PvPoke id, e.g. "Shadow Alolan Ninetales" -> "ninetales_alolan_shadow".
+function pvpokeId(name) {
+  let n = name.trim();
+  const shadow = /\bShadow\b/.test(n);
+  n = n.replace(/\bShadow\b/g, "").replace(/\s+/g, " ").trim();
+  const reg = n.match(/\b(Alolan|Galarian|Hisuian|Paldean)\b/);
+  if (reg) n = n.replace(reg[0], "").replace(/\s+/g, " ").trim();
+  const clean = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/%/g, "").replace(/['’.]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  const strip = f => f.replace(/\s+(Forme?|Mode|size|Breed|Style|Cloak)$/i, "");
+  let base = n, form = "", m;
+  if (PVPOKE_SPECIAL[n.toLowerCase()]) { base = PVPOKE_SPECIAL[n.toLowerCase()]; }
+  else if ((m = n.match(/^(.+?)\s*\((.+)\)$/))) {
+    base = m[1]; form = m[2].replace(/^Hero of Many Battles$/i, "Hero");
+  }
+  else if ((m = n.match(/^(.+?) (?:Forme|Mode) (.+)$/))) { form = m[1]; base = m[2]; }
+  else if ((m = n.match(/^(\S+) (.+?) Forme$/))) { base = m[1]; form = m[2]; }
+  return [clean(base), reg ? reg[1].toLowerCase() : "", clean(strip(form)), shadow ? "shadow" : ""]
+    .filter(Boolean).join("_");
+}
+
+// Per-Pokémon links: the GO Hub page, the IV4U IV rank page (by name) and, for
+// league rows, the PvPoke ranking page. slug may be a plain dex number or a form slug.
+function xlinks(slug, name, mode) {
   const dex = parseInt(slug, 10);
   if (!dex) return "";
   const hub = "https://db.pokemongohub.net/pokemon/" + encodeURIComponent(slug);
+  const cp = PVPOKE_CP[mode];
+  const pvpoke = cp && name
+    ? `\n    <a href="https://pvpoke.com/rankings/all/${cp}/overall/${pvpokeId(name)}/" target="_blank" rel="noopener" title="${esc(mode)} ranking on PvPoke">PvPoke</a>` : "";
   return `<span class="xlinks">
-    <a href="https://pokemondb.net/pokedex/${dex}" target="_blank" rel="noopener" title="Pokémon DB">PokémonDB</a>
-    <a href="${hub}/iv-chart" target="_blank" rel="noopener" title="IV chart on Pokémon GO Hub">IV chart</a></span>`;
+    <a href="${hub}" target="_blank" rel="noopener" title="Pokémon GO Hub page">DB</a>
+    <a href="https://iv4u.lima-city.de/?l=en&m=3&p=${encodeURIComponent(name || "")}" target="_blank" rel="noopener" title="IV ranks on IV4U">IV rank</a>${pvpoke}</span>`;
 }
 
 function treeNode(n) {
@@ -506,7 +539,7 @@ function treeNode(n) {
   const forms = (n.forms || []).map(f =>
     `<span class="chip"><a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(label(f.group))}">${esc(f.name)}</a></span>`).join("");
   const kids = n.evolves_to.length ? `<ul>${n.evolves_to.map(treeNode).join("")}</ul>` : "";
-  return `<li><span class="name">${sprite(n.slug)}<a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.name)}</a>${xlinks(n.slug)}</span> ${req}
+  return `<li><span class="name">${sprite(n.slug)}<a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.name)}</a>${xlinks(n.slug, n.name)}</span> ${req}
     ${forms ? `<div>${forms}</div>` : ""}${kids}</li>`;
 }
 
@@ -524,7 +557,7 @@ function ivMon(m) {
       <td class="${pct}">${l.percent}%</td><td>L${l.level}</td><td>${l.cp} CP</td>${note}</tr>`;
   }).join("");
   return `<div class="ivmon${m.selected ? " sel" : ""}">
-    <h3>${sprite(m.id)}${esc(m.name)}<small>#${m.id} · base ${m.base.join("/")}</small>${xlinks(m.id)}</h3>
+    <h3>${sprite(m.id)}${esc(m.name)}<small>#${m.id} · base ${m.base.join("/")}</small>${xlinks(m.id, m.name)}</h3>
     <table><thead><tr><th>League</th><th>Rank</th><th>Stat product</th><th>Level</th><th>CP</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
