@@ -18,12 +18,12 @@ import pogo_tiers as pt  # noqa: E402
 
 
 def main():
-    here = Path(__file__).resolve().parent
+    data = Path(__file__).resolve().parent.parent / "data"
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--snapshot", default=str(here / "all_rankings.json"),
-                    help="file to write (default: all_rankings.json next to this script)")
-    ap.add_argument("--cache-dir", default=str(here / "pogo_cache"))
+    ap.add_argument("--snapshot", default=str(data / "all_rankings.json"),
+                    help="file to write (default: data/all_rankings.json)")
+    ap.add_argument("--cache-dir", default=str(data / "cache"))
     ap.add_argument("--workers", type=int, default=8, help="parallel downloads (default 8)")
     ap.add_argument("--delay", type=float, default=0.0,
                     help="seconds between request starts (default 0)")

@@ -4,7 +4,7 @@ PvP IV rank calculator (Great / Ultra / Master League).
 
 Base stats and the CP multiplier table come from https://iv4u.lima-city.de
 (list/list.js and cpm.js). They are downloaded once and cached in
-pogo_cache/iv_data.json. Ranks are computed locally: for each of the 4096 IV
+data/cache/iv_data.json. Ranks are computed locally: for each of the 4096 IV
 combinations the highest level (<= the level cap) that keeps CP under the
 league limit is found, and combinations are ordered by stat product
 (attack x defense x floor(HP)). Equal stat products share a rank.
@@ -25,7 +25,7 @@ LEAGUES = [("great", "Great League", 1500), ("ultra", "Ultra League", 2500),
            ("master", "Master League", None)]
 LEVEL_CAPS = (40, 41, 50, 51)
 DEFAULT_CAP = 50
-DATA_FILE = Path(__file__).resolve().parent / "pogo_cache" / "iv_data.json"
+DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "cache" / "iv_data.json"
 
 _ROW_RE = re.compile(r'^\[(\d+),(\d+),"([^"]*)","([^"]*)",(\d+),(\d+),(\d+),"([^"]*)","([^"]*)","[^"]*",\d+,\d+,"([^"]*)"',
                      re.M)
