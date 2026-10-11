@@ -22,12 +22,12 @@ python refresh_data.py              # once; downloads every ranking (~3 min)
 python pogo_ui.py                   # opens http://127.0.0.1:8000
 ```
 
-On macOS you can double-click `Start.command` instead of the last step.
+On macOS you can double-click `Start.command` (or `Start.bat` on Windows) instead of the last step.
 
 `refresh_data.py` saves `all_rankings.json` (~1 MB). The UI only reads that
 file, so searches are instant and need no network, and the UI never scrapes
 anything itself. To update the data, run `python refresh_data.py` again
-(`Start.command` does it automatically on first run). It keeps the old file if
+(`Start.command` / `Start.bat` do it automatically on first run). It keeps the old file if
 the new scrape looks incomplete.
 
 ## Web UI
@@ -85,6 +85,7 @@ version of the same scrape and also takes `--keep-html`.)
 | `all_rankings.json` | Output of `refresh_data.py`; what the UI reads |
 | `pogo_cache/` | Name index and IV data (`iv_data.json` is committed so a host needn't download it) |
 | `Start.command` | macOS double-click launcher |
+| `Start.bat` | Windows double-click launcher |
 
 ## Output JSON
 
