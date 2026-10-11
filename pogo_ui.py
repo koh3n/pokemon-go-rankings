@@ -512,7 +512,7 @@ function pvpokeId(name) {
   let base = n, form = "", m;
   if (PVPOKE_SPECIAL[n.toLowerCase()]) { base = PVPOKE_SPECIAL[n.toLowerCase()]; }
   else if ((m = n.match(/^(.+?)\s*\((.+)\)$/))) {
-    base = m[1]; form = m[2].replace(/^Hero of Many Battles$/i, "Hero");
+    base = m[1]; form = m[2].replace(/^Hero of Many Battles$/i, "Hero").replace(/^(East|West) Sea$/i, "");
   }
   else if ((m = n.match(/^(.+?) (?:Forme|Mode) (.+)$/))) { form = m[1]; base = m[2]; }
   else if ((m = n.match(/^(\S+) (.+?) Forme$/))) { base = m[1]; form = m[2]; }
