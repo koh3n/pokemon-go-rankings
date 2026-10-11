@@ -11,9 +11,9 @@ if not defined PY (
   exit /b 1
 )
 
-if not exist all_rankings.json (
+if not exist data\all_rankings.json (
   echo First run: downloading the rankings ^(about 3 minutes^)...
-  %PY% refresh_data.py
+  %PY% src\refresh_data.py
   if errorlevel 1 (
     echo Download failed.
     pause
@@ -21,7 +21,7 @@ if not exist all_rankings.json (
   )
 )
 
-%PY% pogo_ui.py %*
+%PY% src\pogo_ui.py %*
 
 echo.
 echo Stopped.

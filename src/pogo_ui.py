@@ -11,7 +11,7 @@ Pokedex number, pick which forms you want, and it shows the tier rankings for
 the whole evolution line, one tab per form group, plus the evolution tree.
 
 Searches read all_rankings.json, so they are instant and need no network. Make
-or update that file with `python refresh_data.py` (the hosted/--nightly mode does
+or update that file with `python src/refresh_data.py` (the hosted/--nightly mode does
 it automatically every night). The UI itself never scrapes anything.
 """
 import argparse
@@ -71,7 +71,7 @@ def run_search(q, forms, ivs=None, cap=ivrank.DEFAULT_CAP):
 
     snap = get_snapshot()
     if snap is None:
-        sys.exit("No rankings data yet. Run `python refresh_data.py` once, then reload.")
+        sys.exit("No rankings data yet. Run `python src/refresh_data.py` once, then reload.")
     with LOCK:
         result = pt.build_from_snapshot(snap, q, wanted)
     result["query"] = q
@@ -588,7 +588,7 @@ def nightly_refresh(hour_utc):
 
 
 def main():
-    here = Path(__file__).resolve().parent
+    data = Path(__file__).resolve().parent.parent / "data"
     ap = argparse.ArgumentParser(description="Local web UI for pogo_tiers")
     ap.add_argument("--host", default="127.0.0.1",
                     help="address to bind (0.0.0.0 to accept outside connections)")
@@ -600,9 +600,9 @@ def main():
                     help="re-scrape the whole site once a day (implied by --hosted)")
     ap.add_argument("--refresh-hour", type=int, default=3,
                     help="UTC hour for the nightly refresh (default 3)")
-    ap.add_argument("--cache-dir", default=str(here / "pogo_cache"))
-    ap.add_argument("--snapshot", default=str(here / "all_rankings.json"),
-                    help="rankings file made by `python refresh_data.py`")
+    ap.add_argument("--cache-dir", default=str(data / "cache"))
+    ap.add_argument("--snapshot", default=str(data / "all_rankings.json"),
+                    help="rankings file made by `python src/refresh_data.py`")
     ap.add_argument("--no-browser", action="store_true")
     args = ap.parse_args()
 

@@ -18,15 +18,15 @@ computer, or as a small hosted app (see Deploying).
 
 ```
 pip install -r requirements.txt     # once; needs Python 3.8+
-python refresh_data.py              # once; downloads every ranking (~3 min)
-python pogo_ui.py                   # opens http://127.0.0.1:8000
+python src/refresh_data.py              # once; downloads every ranking (~3 min)
+python src/pogo_ui.py                   # opens http://127.0.0.1:8000
 ```
 
 On macOS you can double-click `Start.command` (or `Start.bat` on Windows) instead of the last step.
 
-`refresh_data.py` saves `all_rankings.json` (~1 MB). The UI only reads that
+`src/refresh_data.py` saves `data/all_rankings.json` (~1 MB). The UI only reads that
 file, so searches are instant and need no network, and the UI never scrapes
-anything itself. To update the data, run `python refresh_data.py` again
+anything itself. To update the data, run `python src/refresh_data.py` again
 (`Start.command` / `Start.bat` do it automatically on first run). It keeps the old file if
 the new scrape looks incomplete.
 
@@ -48,8 +48,8 @@ Options: `--port 9000`, `--no-browser`, `--snapshot PATH`, `--host 0.0.0.0`.
 ## Deploying (Hugging Face Spaces)
 
 The repo includes a `Dockerfile` and the Spaces config at the top of this file.
-Create a Docker Space, push this repo (with `all_rankings.json` and
-`pogo_cache/iv_data.json` committed) and it serves on port 7860. In hosted mode
+Create a Docker Space, push this repo (with `data/all_rankings.json` and
+`data/cache/iv_data.json` committed) and it serves on port 7860. In hosted mode
 (`--hosted`) the server re-scrapes the whole site itself every night at 03:00
 UTC (`--refresh-hour N` to change), at low parallelism, and swaps the new data in
 without a restart. Free Spaces have ephemeral disk, so after a restart it starts
@@ -59,11 +59,11 @@ from the committed file again until the next nightly run; re-run
 ## Command line
 
 ```
-python pogo_tiers.py charmander
-python pogo_tiers.py 4 --forms shadow,regional -o charmander.json
-python pogo_tiers.py charmander --forms none
-python refresh_data.py                     # whole site -> all_rankings.json
-python ivrank.py azumarill 0 15 15         # IV ranks only
+python src/pogo_tiers.py charmander
+python src/pogo_tiers.py 4 --forms shadow,regional -o charmander.json
+python src/pogo_tiers.py charmander --forms none
+python src/refresh_data.py                     # whole site -> all_rankings.json
+python src/ivrank.py azumarill 0 15 15         # IV ranks only
 ```
 
 `--forms` takes `all` (default), `none`, or a comma list of: shadow, regional,
@@ -77,13 +77,13 @@ version of the same scrape and also takes `--keep-html`.)
 
 | File | Purpose |
 |---|---|
-| `pogo_ui.py` | Local web UI |
-| `pogo_tiers.py` | Scraper and parser (single line or `--all`) |
-| `refresh_data.py` | Updates `all_rankings.json` (run from a terminal) |
+| `src/pogo_ui.py` | Local web UI |
+| `src/pogo_tiers.py` | Scraper and parser (single line or `--all`) |
+| `src/refresh_data.py` | Updates `data/all_rankings.json` (run from a terminal) |
 | `Dockerfile` | Container for Hugging Face Spaces / any host |
-| `ivrank.py` | PvP IV rank calculator |
-| `all_rankings.json` | Output of `refresh_data.py`; what the UI reads |
-| `pogo_cache/` | Name index and IV data (`iv_data.json` is committed so a host needn't download it) |
+| `src/ivrank.py` | PvP IV rank calculator |
+| `data/all_rankings.json` | Output of `refresh_data.py`; what the UI reads |
+| `data/cache/` | Name index and IV data (`iv_data.json` is committed so a host needn't download it) |
 | `Start.command` | macOS double-click launcher |
 | `Start.bat` | Windows double-click launcher |
 
@@ -105,7 +105,7 @@ Rank numbers aren't comparable across modes (e.g. Fire-type #38 vs Great League
 ## Notes
 
 - **IV data** comes from https://iv4u.lima-city.de (downloaded once, cached in
-  `pogo_cache/iv_data.json`); ranks are computed locally. Checked against IV4U's
+  `data/cache/iv_data.json`); ranks are computed locally. Checked against IV4U's
   own PvP tables: ~99.99% of spreads match exactly, the rest are off by one tie
   group. Mega and Primal forms are skipped since they can't battle.
 - **Rate limits**: if the site answers HTTP 429 the scraper backs off and
