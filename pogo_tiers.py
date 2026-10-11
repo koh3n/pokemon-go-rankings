@@ -198,6 +198,17 @@ def load_name_index(fetch):
                 name = anchor_name(a)
                 if name:
                     idx.setdefault(norm(name), slug)
+    # Some species have no plain page, only forms (422-East_Sea, 422-West_Sea):
+    # index them by their base name so they can be searched and scraped.
+    plain = {split_slug(v)[0] for v in idx.values() if v.isdigit()}
+    for html in pages:
+        for a in BeautifulSoup(html, "html.parser").find_all("a", href=True):
+            slug = slug_from_href(a["href"])
+            dex, tag = split_slug(slug) if slug else (None, None)
+            if dex and tag and dex not in plain and form_group(slug) == "other":
+                name = re.sub(r"\s*\(.*\)\s*$", "", anchor_name(a))
+                if name:
+                    idx.setdefault(norm(name), slug)
     idx_file.write_text(json.dumps(idx), encoding="utf-8")
     return idx
 
@@ -364,7 +375,7 @@ def build_all(fetch, workers=8):
     page's family links (forms + evolutions) until no new pages turn up.
     """
     idx = load_name_index(fetch)
-    dexes = sorted({int(v) for v in idx.values()})
+    seeds = sorted(set(idx.values()), key=lambda v: (split_slug(v)[0], v))
     pages, names, failed = {}, {}, {}
 
     def grab(slug):
@@ -387,8 +398,8 @@ def build_all(fetch, workers=8):
                 if i % 50 == 0 or i == len(slugs):
                     print(f"  {i}/{len(slugs)} pages", file=sys.stderr)
 
-    print(f"Pass 1: {len(dexes)} Pokedex entries", file=sys.stderr)
-    run([str(d) for d in dexes])
+    print(f"Pass 1: {len(seeds)} Pokedex entries", file=sys.stderr)
+    run(seeds)
     round_ = 2
     while True:
         todo = sorted(s for s in names if s not in pages and s not in failed)
@@ -400,10 +411,16 @@ def build_all(fetch, workers=8):
 
     per_pokemon = []
     edges = {}
-    for slug in sorted(pages, key=lambda s: (split_slug(s)[0], form_group(s) != "normal", s)):
+    plain = {split_slug(s)[0] for s in pages if s.isdigit()}
+
+    def group_of(slug):
+        g = form_group(slug)
+        return "normal" if g == "other" and split_slug(slug)[0] not in plain else g
+
+    for slug in sorted(pages, key=lambda s: (split_slug(s)[0], group_of(s) != "normal", s)):
         page = pages[slug]
         per_pokemon.append({
-            "slug": slug, "name": names.get(slug) or slug, "group": form_group(slug),
+            "slug": slug, "name": names.get(slug) or slug, "group": group_of(slug),
             "dex": split_slug(slug)[0], "url": f"{BASE}/pokemon/{slug}",
             "rankings": page["rankings"] or [],
             "unranked_modes": page["unranked"] or [],
@@ -460,9 +477,16 @@ def assemble(query, start, keep, edges, page_of):
     keep: {slug: name}; edges: [{from, to, requires}]; page_of(slug) ->
     {"rankings": [...] | None, "unranked": [...]}.
     """
+    # species the site only lists as forms (Shellos) count as "normal"
+    plain = {split_slug(s)[0] for s in keep if s.isdigit()}
+
+    def grp(slug):
+        g = form_group(slug)
+        return "normal" if g == "other" and split_slug(slug)[0] not in plain else g
+
     per_pokemon = []
     warned = set()
-    for slug in sorted(keep, key=lambda s: (split_slug(s)[0], form_group(s) != "normal", s)):
+    for slug in sorted(keep, key=lambda s: (split_slug(s)[0], grp(s) != "normal", s)):
         page = page_of(slug)
         rankings = page["rankings"]
         if rankings is None:
@@ -475,7 +499,7 @@ def assemble(query, start, keep, edges, page_of):
                 print(f"warning: unknown tier '{r['tier']}' sorts last; add it "
                       "to TIER_ORDER", file=sys.stderr)
         per_pokemon.append({
-            "slug": slug, "name": keep[slug], "group": form_group(slug),
+            "slug": slug, "name": keep[slug], "group": grp(slug),
             "dex": split_slug(slug)[0], "url": f"{BASE}/pokemon/{slug}",
             "rankings": rankings, "unranked_modes": page["unranked"] or [],
         })
@@ -486,7 +510,7 @@ def assemble(query, start, keep, edges, page_of):
     # Mega/Primal rows in the chart are forms, not evolutions -> excluded here.
     nodes = {}
     for slug, name in keep.items():
-        if form_group(slug) in ("normal", "regional"):
+        if grp(slug) in ("normal", "regional"):
             nodes[slug] = {"slug": slug, "name": name,
                            "url": f"{BASE}/pokemon/{slug}",
                            "requires": None, "evolves_to": [], "forms": []}
@@ -498,7 +522,7 @@ def assemble(query, start, keep, edges, page_of):
                 nodes[e["from"]]["evolves_to"].append(nodes[e["to"]])
             has_parent.add(e["to"])
     for slug, name in keep.items():
-        g = form_group(slug)
+        g = grp(slug)
         if g in ("normal", "regional"):
             continue
         owner = nodes.get(base_slug(slug)) or nodes.get(str(split_slug(slug)[0]))
@@ -507,15 +531,15 @@ def assemble(query, start, keep, edges, page_of):
                                    "url": f"{BASE}/pokemon/{slug}"})
     # regional nodes are also forms of their plain Pokemon
     for slug, node in nodes.items():
-        if form_group(slug) == "regional" and slug not in has_parent:
+        if grp(slug) == "regional" and slug not in has_parent:
             owner = nodes.get(str(split_slug(slug)[0]))
             if owner:
                 owner["forms"].append({"slug": slug, "name": node["name"],
                                        "group": "regional", "url": node["url"]})
     roots = [n for s, n in nodes.items() if s not in has_parent
-             and form_group(s) == "normal"]
+             and grp(s) == "normal"]
     roots += [n for s, n in nodes.items() if s not in has_parent
-              and form_group(s) == "regional"]
+              and grp(s) == "regional"]
 
     return {
         "query": query, "resolved_slug": start, "source": BASE,
@@ -569,6 +593,9 @@ def build_from_snapshot(snap, query, wanted_groups):
         for p in snap["per_pokemon"]:
             if p["slug"].isdigit():
                 names.setdefault(norm(p["name"]), p["slug"])
+            elif p["group"] == "normal":     # species the site only lists as forms
+                base = re.sub(r"\s*\(.*\)\s*$", "", p["name"])
+                names.setdefault(norm(base), p["slug"])
         key = norm(q)
         if key not in names:
             close = sorted(n for n in names if key and key in n)[:8]
