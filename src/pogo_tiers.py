@@ -24,7 +24,7 @@ Usage:
 Needs:  pip install requests beautifulsoup4
 
 Speed: all of a line's pages are downloaded in parallel with no pause between
-requests (--delay SECONDS adds one back), and cached on disk in pogo_cache/ next
+requests (--delay SECONDS adds one back), and cached on disk in data/cache/ next
 to this script, so repeat searches are instant. --all scrapes the whole site
 once (~3 minutes) and keeps only the rankings (~1 MB, no HTML), which the web
 UI then reads. If the site ever answers 429
@@ -48,6 +48,7 @@ import requests
 from bs4 import BeautifulSoup, Comment
 
 BASE = "https://db.pokemongohub.net"
+DEFAULT_SNAPSHOT = str(Path(__file__).resolve().parent.parent / "data" / "all_rankings.json")
 USER_AGENT = "pogo-tier-script/1.0 (personal use, low volume)"
 WORKERS = 32         # max pages downloaded at the same time (a whole line fits in one burst)
 DEFAULT_DELAY = 0.0  # no pause between requests; use --delay 0.5 etc. to slow down
@@ -666,14 +667,14 @@ def main():
     ap.add_argument("--workers", type=int, default=8,
                     help="parallel downloads for --all (default 8)")
     ap.add_argument("--keep-html", action="store_true",
-                    help="with --all, also cache the raw pages in pogo_cache/")
+                    help="with --all, also cache the raw pages in data/cache/")
     ap.add_argument("--forms", default="all",
                     help="'all' (default), 'none', or a comma list of: "
                          + ", ".join(FORM_GROUPS))
     ap.add_argument("-o", "--output", help="JSON output path "
                     "(default: <pokemon>_tiers.json)")
     ap.add_argument("--cache-dir",
-                    default=str(Path(__file__).resolve().parent / "pogo_cache"),
+                    default=str(Path(__file__).resolve().parent.parent / "data" / "cache"),
                     help="where downloaded pages are cached (default: next to this script)")
     ap.add_argument("--delay", type=float, default=DEFAULT_DELAY,
                     help="seconds to wait between request starts (default 0 = all at once)")
@@ -697,7 +698,7 @@ def main():
         fetch = Fetcher(args.cache_dir, args.delay, args.offline, args.refresh,
                         store=args.keep_html)
         result = build_all(fetch, args.workers)
-        out = Path(args.output or "all_rankings.json")
+        out = Path(args.output or DEFAULT_SNAPSHOT)
         out.write_text(json.dumps(result, separators=(",", ":"), ensure_ascii=False),
                        encoding="utf-8")
         ranked = sum(1 for p in result["per_pokemon"] if p["rankings"])

@@ -1,5 +1,5 @@
 .venv/
 __pycache__/
 .git/
-pogo_cache/*
-!pogo_cache/iv_data.json
+data/cache/*
+!data/cache/iv_data.json

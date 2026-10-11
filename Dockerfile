@@ -12,5 +12,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --chown=user . .
 
 EXPOSE 7860
-# Serves the committed all_rankings.json and re-scrapes it every night at 03:00 UTC.
-CMD ["python", "pogo_ui.py", "--hosted", "--host", "0.0.0.0", "--port", "7860", "--refresh-hour", "3"]
+# Serves the committed data/all_rankings.json and re-scrapes it every night at 03:00 UTC.
+CMD ["python", "src/pogo_ui.py", "--hosted", "--host", "0.0.0.0", "--port", "7860", "--refresh-hour", "3"]
