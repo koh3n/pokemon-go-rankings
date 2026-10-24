@@ -2,7 +2,7 @@
 
 A static React + TypeScript + Vite version of the app. Everything runs in the browser: it loads
 `data/all_rankings.json` (the GO Hub rankings scraped by `src/refresh_data.py`) and
-`data/cache/iv_data.json` (PvPoke base stats and CP multipliers) as static files, and calculates
+`data/cache/iv_data.json` (PvPoke base stats and CP multipliers, from `src/refresh_iv_data.py`) as static files, and calculates
 the IV ranks and spreads itself. There is no server.
 
 ```bash
@@ -23,9 +23,10 @@ Cloudflare Pages, Netlify, GitHub Pages...).
 digests of all 4096 IV spreads for every Pokémon in every league, plus rank lookups, name
 lookups and complete search results. `npm test` checks that the TypeScript output is identical.
 
-```bash
-.venv/bin/python web/scripts/gen_fixtures.py   # only needed if the Python code or data changes
-```
+The Python implementation was removed from `main` after the port was verified; it is kept in the
+`python-final` tag. The committed `test/fixtures.json` is what the tests compare against.
+Regenerating it (only needed if the data's shape changes) means checking `src/` out of that tag
+first; see the top of `scripts/gen_fixtures.py`.
 
 ## Layout
 
