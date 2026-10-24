@@ -6,8 +6,8 @@ import type { Snapshot } from '../src/lib/tiers'
 
 const root = new URL('../../', import.meta.url)
 const read = (p: string) => JSON.parse(readFileSync(new URL(p, root), 'utf8'))
-const snap = read('data/all_rankings.json') as Snapshot
-const ranker = new IvRanker(read('data/cache/iv_data.json') as IvData)
+const snap = read('web/test/data/all_rankings.json') as Snapshot
+const ranker = new IvRanker(read('web/test/data/iv_data.json') as IvData)
 const fx = read('web/test/fixtures.json')
 
 describe('search matches Python', () => {

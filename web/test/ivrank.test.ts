@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { IvRanker, type IvData, type LeagueKey, type LeagueRank, type SpreadRow } from '../src/lib/ivrank'
 
 const root = new URL('../../', import.meta.url)
-const ivData = JSON.parse(readFileSync(new URL('data/cache/iv_data.json', root), 'utf8')) as IvData
+const ivData = JSON.parse(readFileSync(new URL('web/test/data/iv_data.json', root), 'utf8')) as IvData
 const fx = JSON.parse(readFileSync(new URL('web/test/fixtures.json', root), 'utf8'))
 const ranker = new IvRanker(ivData)
 
