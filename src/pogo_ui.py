@@ -17,6 +17,7 @@ it automatically every night). The UI itself never scrapes anything.
 import argparse
 import json
 import os
+import re
 import sys
 import threading
 import time
@@ -73,11 +74,44 @@ def run_search(q, forms, ivs=None, cap=ivrank.DEFAULT_CAP):
     if snap is None:
         sys.exit("No rankings data yet. Run `python src/refresh_data.py` once, then reload.")
     with LOCK:
-        result = pt.build_from_snapshot(snap, q, wanted)
+        slug = snapshot_slug(snap, q)
+        try:
+            result = pt.build_from_snapshot(snap, slug or q, wanted)
+        except SystemExit:
+            slug = slug or snapshot_slug(snap, q, loose=True)
+            if not slug:
+                raise
+            result = pt.build_from_snapshot(snap, slug, wanted)
     result["query"] = q
     if ivs:
         add_ivs(result, q, ivs, cap)
     return result
+
+
+def snapshot_slug(snap, q, loose=False):
+    """Slug of the snapshot entry whose name has the same words as q, or None.
+
+    Lets form names that pt's plain name lookup misses work in the search box: the autocomplete
+    offers "Aegislash (Blade)" (GO Hub: "Aegislash Sword Forme") and "Galarian Corsola" (a form
+    page, not a species page). loose=True also accepts entries with extra words, so "Aegislash"
+    finds its first form. Pokédex numbers and slugs are left to pt.
+    """
+    if re.fullmatch(r"\d+(-\w+)?", q.strip()):
+        return None
+    want = ivrank.name_words(q)
+    if not want:
+        return None
+    names = [(ivrank.name_words(p["name"]), p) for p in snap["per_pokemon"]]
+    hits = [p for w, p in names if (want <= w if loose else want == w)]
+    if not hits and loose and "(" in q:       # a PvPoke form the GO Hub has no page for
+        base = ivrank.name_words(q.split("(")[0])
+        hits = [p for w, p in names if base <= w]
+    hits.sort(key=lambda p: (p["group"] != "normal", "shadow" in p["name"].lower()))
+    if not hits:
+        return None
+    slug = hits[0]["slug"]
+    # pt only accepts plain slugs; forms like "741-Pa'u" start from the species instead
+    return slug if re.fullmatch(r"\d+(-[A-Za-z0-9_]+)?", slug) else str(hits[0]["dex"])
 
 
 LEAGUE_MODES = {"Great League": "great", "Ultra League": "ultra", "Master League": "master"}
@@ -114,6 +148,8 @@ def add_ivs(result, q, ivs, cap):
 def run_iv(q, atk, dfn, sta, cap):
     """PvP IV ranks for a Pokémon (and every stage of its line)."""
     mons = ivrank.find_mons(q)
+    if not mons and ivrank.find_exact(q):       # e.g. "Shadow Cursola", "Galarian Shadow Meowth"
+        mons = [ivrank.find_exact(q)]
     if not mons:
         raise ValueError(f"No Pokémon matches '{q}' in the IV data.")
     if len(mons) > 6:
