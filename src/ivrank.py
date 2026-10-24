@@ -177,7 +177,7 @@ _SYNONYMS = {"sunny": "sunshine", "sword": "blade"}      # GO Hub wording -> PvP
 _NOT_PVP = {"mega", "primal", "dynamax", "gigantamax", "eternamax"}
 
 
-def _words(name):
+def name_words(name):
     s = name.lower().replace("♀", " f").replace("♂", " m")
     s = unicodedata.normalize("NFD", s)
     words = re.split(r"[^a-z0-9]+", "".join(c for c in s if not unicodedata.combining(c)))
@@ -186,7 +186,7 @@ def _words(name):
 
 @lru_cache(maxsize=1)
 def _word_index():
-    return [(_words(m["name"]), m) for m in load_data()["mons"]]
+    return [(name_words(m["name"]), m) for m in load_data()["mons"]]
 
 
 def find_exact(name):
@@ -196,7 +196,7 @@ def find_exact(name):
     and are the most numerous ("Minior (Blue Core)" -> "Minior (Core)", "Ogerpon (Teal Mask)" ->
     "Ogerpon"); a bare species name falls back to its first listed form. Mega/Primal/Dynamax
     and Gigantamax Pokémon can't battle in PvP, so they match nothing."""
-    q = _words(name)
+    q = name_words(name)
     if not q or q & _NOT_PVP:
         return None
     index = _word_index()
