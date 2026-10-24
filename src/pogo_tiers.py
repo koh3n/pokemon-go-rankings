@@ -58,7 +58,9 @@ TIER_ORDER = ["S+", "S", "A+", "A", "A-", "B+", "B", "B-",
               "C+", "C", "C-", "D+", "D", "D-", "E", "F"]
 TIER_INDEX = {t: i for i, t in enumerate(TIER_ORDER)}
 
-TIER_RE = re.compile(r"^([A-Z][+\-]?)\s*Tier\s*(?:#\s*(\d+))?$")
+# "A", "A+", "A Tier", "A Tier #259" (the site now writes the tier, "#" and the number as
+# separate pieces of text; older pages wrote "A Tier" and "#259")
+TIER_RE = re.compile(r"^([A-Z][+\-]?)(?:\s*Tier)?\s*(?:#\s*(\d+))?$")
 RANK_RE = re.compile(r"^#\s*(\d+)$")
 HEADING_RE = re.compile(r"^h[1-6]$")
 FAMILY_TITLE_RE = re.compile(
@@ -238,43 +240,59 @@ def parse_rankings(soup):
 
     Works from the section's text tokens rather than exact tags, so it copes
     with table / list / div layouts:
-        <mode label>  <'Not ranked' | 'A Tier' '#259' | 'A Tier #259'>
+        <mode label>  <'Not ranked' | 'A' '#' '259' | 'A Tier' '#259' | 'A Tier #259'>
+    The tiles live in a container of their own (class "...tierRankingsContainer");
+    older pages put them straight after the "Tier Ranking" heading, which is the
+    fallback.
     """
-    head = None
-    for h in soup.find_all(HEADING_RE):
-        if re.search(r"tier ranking", h.get_text(" ", strip=True), re.I):
-            head = h
-            break
-    if head is None:
-        return None, None
-
-    tokens = []
-    for s in head.find_all_next(string=True):
-        if isinstance(s, Comment) or s.find_parent(["script", "style"]):
-            continue
-        owner = s.find_parent(HEADING_RE)
-        if owner is head:
-            continue
-        if owner is not None:           # reached the next heading -> section over
-            break
-        t = " ".join(s.split())
-        if t:
-            tokens.append(t)
-        if len(tokens) > 150:
-            break
+    tokens = None
+    box = soup.find(class_=re.compile(r"tierRankingsContainer"))
+    if box is not None:
+        tokens = [" ".join(s.split()) for s in box.find_all(string=True)
+                  if not isinstance(s, Comment) and not s.find_parent(["script", "style"])]
+        tokens = [t for t in tokens if t]
+    if not tokens:
+        head = None
+        for h in soup.find_all(HEADING_RE):
+            if re.search(r"tier ranking", h.get_text(" ", strip=True), re.I):
+                head = h
+                break
+        if head is None:
+            return None, None
+        tokens = []
+        for s in head.find_all_next(string=True):
+            if isinstance(s, Comment) or s.find_parent(["script", "style"]):
+                continue
+            owner = s.find_parent(HEADING_RE)
+            if owner is head:
+                continue
+            if owner is not None:           # reached the next heading -> section over
+                break
+            t = " ".join(s.split())
+            if t:
+                tokens.append(t)
+            if len(tokens) > 150:
+                break
 
     rankings, unranked = [], []
-    mode, pending = None, None
+    mode, pending, hash_seen = None, None, False
     for t in tokens:
-        if pending is not None:                       # waiting for '#123'
+        if pending is not None:                       # waiting for '#123', or '#' then '123'
             m = RANK_RE.match(t)
             if m:
                 rankings.append({"mode": mode, "tier": pending,
                                  "rank": int(m.group(1))})
                 pending = None
                 continue
+            if t == "#" and not hash_seen:
+                hash_seen = True
+                continue
+            if hash_seen and t.isdigit():
+                rankings.append({"mode": mode, "tier": pending, "rank": int(t)})
+                pending, hash_seen = None, False
+                continue
             rankings.append({"mode": mode, "tier": pending, "rank": None})
-            pending = None
+            pending, hash_seen = None, False
         if t.lower().rstrip(".") == "not ranked":
             if mode:
                 unranked.append(mode)
@@ -564,8 +582,9 @@ def refresh_snapshot(path, cache_dir, workers=4, delay=0.2):
     """Re-scrape the whole site and replace the snapshot file atomically.
 
     Returns (ok, message). The old file is kept if the new scrape looks
-    incomplete (fewer than 90% of the old page count, or >5% of pages failed),
-    so a bad night never wipes the data.
+    incomplete (fewer than 90% of the old page count, >5% of pages failed, or
+    fewer than 90% of the old number of rankings, which is what a change in the
+    site's markup looks like), so a bad night never wipes the data.
     """
     path = Path(path)
     old = load_snapshot(path)
@@ -575,10 +594,15 @@ def refresh_snapshot(path, cache_dir, workers=4, delay=0.2):
     old_n = old.get("pages_scraped", 0) if old else 0
     if n < 0.9 * old_n or failed > 0.05 * max(n, 1):
         return False, f"kept old data: new scrape has {n} pages ({failed} failed), old had {old_n}"
+    count = lambda snap: sum(len(p["rankings"]) for p in snap["per_pokemon"])
+    new_r, old_r = count(new), count(old) if old else 0
+    if new_r < 0.9 * old_r:
+        return False, (f"kept old data: new scrape found {new_r} rankings, old had {old_r}; "
+                       "the site's markup may have changed (see parse_rankings in pogo_tiers.py)")
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(new, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     os.replace(tmp, path)
-    return True, f"saved {n} pages ({failed} failed)"
+    return True, f"saved {n} pages, {new_r} rankings ({failed} failed)"
 
 
 def build_from_snapshot(snap, query, wanted_groups):
