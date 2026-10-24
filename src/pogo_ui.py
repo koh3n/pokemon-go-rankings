@@ -116,7 +116,7 @@ def run_iv(q, atk, dfn, sta, cap):
     """PvP IV ranks for a Pokémon (and every stage of its line)."""
     mons = ivrank.find_mons(q)
     if not mons:
-        raise ValueError(f"No Pokémon matches '{q}' in the IV4U list.")
+        raise ValueError(f"No Pokémon matches '{q}' in the IV data.")
     if len(mons) > 6:
         raise ValueError(f"'{q}' matches {len(mons)} Pokémon; be more specific.")
     seen, out = set(), []
@@ -211,6 +211,27 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(200, names)
             except Exception as e:
                 return self._json(502, {"error": f"Couldn't load IV data: {e}"})
+        if url.path == "/api/ivspreads":
+            qs = parse_qs(url.query)
+            get = lambda k, d="": (qs.get(k) or [d])[0].strip()
+            try:
+                mon = ivrank.find_exact(get("p"))
+                if not mon:
+                    raise ValueError(f"No Pokémon named '{get('p')}'.")
+                league = get("league", "great")
+                cap = int(get("cap", str(ivrank.DEFAULT_CAP)))
+                rows = ivrank.all_spreads(mon, league, cap)
+                line = [{"name": m["name"], "id": m["id"] % 10000}
+                        for m in ivrank.line_of(mon)]
+                return self._json(200, {
+                    "name": mon["name"], "id": mon["id"] % 10000,
+                    "base": [mon["atk"], mon["def"], mon["sta"]],
+                    "league": league, "cap": cap, "line": line, "rows": rows,
+                    "cp_cap": {k: c for k, _l, c in ivrank.LEAGUES}[league]})
+            except ValueError as e:
+                return self._json(400, {"error": str(e)})
+            except Exception as e:
+                return self._json(500, {"error": f"{type(e).__name__}: {e}"})
         self._json(404, {"error": "not found"})
 
 
@@ -300,6 +321,16 @@ ul.tree li{margin:6px 0}
 .chip a:hover,.name a:hover{text-decoration:underline}
 .name a{color:var(--text);font-weight:600;text-decoration:none}
 details{margin-top:10px;color:var(--muted);font-size:13px}
+details.ivsec{margin:0;border-top:1px solid var(--line);color:var(--text);font-size:15px}
+details.ivsec:first-of-type{border-top:0}
+details.ivsec>summary{cursor:pointer;padding:10px 0;font-weight:600}
+details.ivsec>summary small{color:var(--muted);font-weight:400;margin-left:6px}
+.ivbody{padding:0 0 12px}
+.ivbody td.n{font-variant-numeric:tabular-nums}
+.ivbody td.iv{font-variant-numeric:tabular-nums;font-weight:600}
+.ivbody .more{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid var(--line);
+  border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
 @media (max-width:560px){ th:nth-child(1),td.num{display:none} }
 </style>
 </head>
@@ -349,10 +380,14 @@ details{margin-top:10px;color:var(--muted);font-size:13px}
       <h2>Evolution tree</h2>
       <div id="tree"></div>
     </div>
+    <div class="card" id="ivspreads-card">
+      <h2>IV spreads</h2>
+      <p class="hint" style="margin:0 0 6px">Every IV combination for each Pokémon in the line, best first. Expand one to see Great, Ultra and Master League.</p>
+      <div id="ivspreads"></div>
+    </div>
   </div>
 </main>
 <footer class="foot">Data: <a href="https://db.pokemongohub.net" target="_blank" rel="noopener">Pokémon GO Hub</a>
-  · IV ranks: <a href="https://iv4u.lima-city.de" target="_blank" rel="noopener">IV4U</a>
   · Sprites: <a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokeAPI</a>
   <span>__ASOF__</span></footer>
 
@@ -433,6 +468,7 @@ function render() {
   renderIv();
   renderTable();
   $("tree").innerHTML = `<ul class="tree">${RESULT.evolution_tree.map(treeNode).join("")}</ul>`;
+  renderIvSections();
 }
 
 function renderIv() {
@@ -520,7 +556,7 @@ function pvpokeId(name) {
     .filter(Boolean).join("_");
 }
 
-// Per-Pokémon links: the GO Hub page, the IV4U IV rank page (by name) and, for
+// Per-Pokémon links: the GO Hub page, the IV spreads subpage (by name) and, for
 // league rows, the PvPoke ranking page. slug may be a plain dex number or a form slug.
 function xlinks(slug, name, mode) {
   const dex = parseInt(slug, 10);
@@ -531,7 +567,7 @@ function xlinks(slug, name, mode) {
     ? `\n    <a href="https://pvpoke.com/rankings/all/${cp}/overall/${pvpokeId(name)}/" target="_blank" rel="noopener" title="${esc(mode)} ranking on PvPoke">PvPoke</a>` : "";
   return `<span class="xlinks">
     <a href="${hub}" target="_blank" rel="noopener" title="Pokémon GO Hub page">DB</a>
-    <a href="https://iv4u.lima-city.de/?l=en&m=3&p=${encodeURIComponent(name || "")}" target="_blank" rel="noopener" title="IV ranks on IV4U">IV rank</a>${pvpoke}</span>`;
+    <a href="#ivspreads-card" data-iv="${esc(name || "")}" title="All IV spreads for every league">IV spreads</a>${pvpoke}</span>`;
 }
 
 function treeNode(n) {
@@ -560,6 +596,114 @@ function ivMon(m) {
     <h3>${sprite(m.id)}${esc(m.name)}<small>#${m.id} · base ${m.base.join("/")}</small>${xlinks(m.id, m.name)}</h3>
     <table><thead><tr><th>League</th><th>Rank</th><th>Stat product</th><th>Level</th><th>CP</th><th></th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
+}
+
+// ---- IV spreads (collapsible, one per Pokémon in the line) ----
+const IV_LEAGUES = [["great", "Great League"], ["ultra", "Ultra League"], ["master", "Master League"]];
+
+function treeNames(nodes, out = []) {
+  for (const n of nodes) { if (!out.includes(n.name)) out.push(n.name); treeNames(n.evolves_to, out); }
+  return out;
+}
+
+function renderIvSections() {
+  $("ivspreads").innerHTML = "";
+  for (const name of treeNames(RESULT.evolution_tree)) $("ivspreads").appendChild(ivSection(name));
+}
+
+function ivSection(name) {
+  const d = document.createElement("details");
+  d.className = "ivsec"; d.dataset.name = name;
+  d.innerHTML = `<summary>${esc(name)}</summary><div class="ivbody"></div>`;
+  d.addEventListener("toggle", () => { if (d.open && !d._init) { d._init = true; ivInit(d, name); } });
+  return d;
+}
+
+function openIv(name) {
+  const base = name.replace(/^Shadow /i, "").toLowerCase();
+  let d = [...document.querySelectorAll("details.ivsec")].find(x => x.dataset.name.toLowerCase() === base);
+  if (!d) { d = ivSection(name.replace(/^Shadow /i, "")); $("ivspreads").appendChild(d); }
+  d.open = true;
+  d.scrollIntoView({behavior: "smooth", block: "start"});
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("a[data-iv]");
+  if (a) { e.preventDefault(); openIv(a.dataset.iv); }
+});
+
+function ivInit(root, name) {
+  const body = root.querySelector(".ivbody");
+  const st = {league: "great", data: null, shown: 100, filtered: []};
+  body.innerHTML = `<div class="tabs"></div>
+    <div class="toolbar"><div class="row">
+      <label>Level cap: <select class="cap"><option>40</option><option>41</option><option selected>50</option><option>51</option></select></label>
+      <input class="flt" type="text" placeholder="Find IVs, e.g. 0/15/15 or */14/*" aria-label="Find an IV spread" autocomplete="off">
+    </div><span class="count" style="color:var(--muted);font-size:13px"></span></div>
+    <p class="hint note" style="margin:0 0 8px"></p>
+    <div class="tbl"></div>
+    <div class="more"><button class="more1" hidden></button><button class="moreall" hidden></button></div>`;
+  const q = sel => body.querySelector(sel);
+
+  function matcher(text) {
+    // "0/15/15", "0 15 15", "*/14/*", or a partial like "15/15"; * matches anything.
+    const parts = text.split(/[\s/,\-.]+/).filter(Boolean);
+    if (!parts.length) return null;
+    if (parts.length === 3) return r => parts.every((p, i) => p === "*" || +p === r[1 + i]);
+    return r => r.slice(1, 4).join("/").includes(parts.join("/"));
+  }
+
+  function draw() {
+    const slice = st.filtered.slice(0, st.shown);
+    q(".tbl").innerHTML = !slice.length ? `<div class="empty">No spreads match.</div>` :
+      `<table><thead><tr><th>Rank</th><th>IVs (Atk/Def/HP)</th><th>%</th><th>Level</th><th>CP</th><th>Atk</th><th>Def</th><th>HP</th></tr></thead><tbody>` +
+      slice.map(r => {
+        const cls = r[6] >= 98 ? "pct-hi" : r[6] >= 90 ? "pct-mid" : "pct-lo";
+        return `<tr><td class="n"><b>#${r[0]}</b></td><td class="iv">${r[1]}/${r[2]}/${r[3]}</td>
+          <td class="n ${cls}">${r[6].toFixed(2)}%</td><td class="n">${r[4]}</td><td class="n">${r[5]}</td>
+          <td class="n">${r[7].toFixed(2)}</td><td class="n">${r[8].toFixed(2)}</td><td class="n">${r[9]}</td></tr>`;
+      }).join("") + `</tbody></table>`;
+    const left = st.filtered.length - slice.length;
+    q(".more1").hidden = q(".moreall").hidden = left <= 0;
+    q(".more1").textContent = `Show ${Math.min(100, left)} more`;
+    q(".moreall").textContent = `Show all (${left} left)`;
+  }
+
+  function show() {
+    const d = st.data, rows = d.rows, best = rows[0], level = q(".cap").value;
+    q(".tabs").innerHTML = "";
+    for (const [k, lab] of IV_LEAGUES) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tab"; b.textContent = lab;
+      b.setAttribute("aria-selected", k === st.league);
+      b.onclick = () => { st.league = k; load(); };
+      q(".tabs").appendChild(b);
+    }
+    q(".note").textContent = (d.cp_cap
+      ? `Highest level ≤ ${level} that keeps CP at or under ${d.cp_cap}. `
+      : `Powered to the level cap (${level}). `) +
+      `Best spread: ${best[1]}/${best[2]}/${best[3]}` + (d.cp_cap ? ` at L${best[4]} (${best[5]} CP).` : ".") +
+      ` Base stats ${d.base.join("/")}.`;
+    const m = matcher(q(".flt").value);
+    st.filtered = m ? rows.filter(m) : rows;
+    q(".count").textContent = m ? `${st.filtered.length} of ${rows.length}` : `${rows.length} spreads`;
+    draw();
+  }
+
+  async function load() {
+    q(".note").textContent = "Calculating…";
+    try {
+      const res = await fetch("/api/ivspreads?" + new URLSearchParams({p: name, league: st.league, cap: q(".cap").value}));
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      st.data = data; st.shown = 100; show();
+    } catch (e) { q(".note").textContent = e.message; q(".note").className = "hint note error"; }
+  }
+
+  q(".cap").onchange = load;
+  q(".flt").oninput = () => { if (st.data) { st.shown = 100; show(); } };
+  q(".more1").onclick = () => { st.shown += 100; draw(); };
+  q(".moreall").onclick = () => { st.shown = st.filtered.length; draw(); };
+  load();
 }
 
 $("form").addEventListener("submit", e => { e.preventDefault(); search(); });
