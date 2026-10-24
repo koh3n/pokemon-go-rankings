@@ -1,15 +1,10 @@
-# Re-scrape the GO Hub rankings every night and publish them if they changed.
+# Re-scrape the GO Hub rankings every night and commit them to main if they changed.
 #
-# main requires a review, which the default Actions token can't satisfy, so there are two modes:
-#
-#  * Direct push (recommended): add a repo secret DATA_REFRESH_TOKEN, a fine-grained personal
-#    access token from the repo owner with "Contents: Read and write" on this repository. The
-#    owner is allowed past the review rule (enforce_admins is off), so the data is committed
-#    straight to main.
-#  * Pull request (no secret): the workflow pushes a rolling `data-refresh` branch and opens one
-#    "Refresh data" PR. This needs Settings -> Actions -> General -> "Allow GitHub Actions to
-#    create and approve pull requests"; without it the branch is still pushed and the log links
-#    to the page for opening the PR by hand.
+# Needs main to accept pushes from the Actions token: i.e. no "Require a pull request before
+# merging" rule on main (Settings -> Branches). If you keep that rule, add a repo secret
+# DATA_REFRESH_TOKEN (a fine-grained personal access token from the repo owner with
+# "Contents: Read and write" on this repository); the owner is allowed past the rule, and the
+# workflow uses the secret in place of the default token when it exists.
 #
 # If only the scrape timestamp changed, nothing is committed.
 name: Refresh data
@@ -21,7 +16,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 concurrency:
   group: refresh-data
@@ -31,9 +25,6 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      GH_TOKEN: ${{ secrets.DATA_REFRESH_TOKEN || github.token }}
-      DIRECT_PUSH: ${{ secrets.DATA_REFRESH_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,7 +45,7 @@ jobs:
         # only changes when new Pokémon are added to the game
         run: python src/refresh_iv_data.py
 
-      - name: Publish the new data
+      - name: Commit the new data to main
         run: |
           # the scrape timestamp changes every run, so compare everything else
           strip() { jq -S 'del(.scraped_at)' "$1"; }
@@ -67,24 +58,9 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          if [ "$DIRECT_PUSH" = "true" ]; then
-            git add data/all_rankings.json data/cache/iv_data.json
-            git commit -q -m "Refresh data ($(date -u +%F))"
-            git push origin HEAD:main
-            echo "Pushed the new data to main."
-            exit 0
-          fi
-
-          git checkout -B data-refresh
           git add data/all_rankings.json data/cache/iv_data.json
           git commit -q -m "Refresh data ($(date -u +%F))"
-          git push --force origin data-refresh
-
-          body="Automated re-scrape of db.pokemongohub.net on $(date -u +%F)."
-          if gh pr view data-refresh --json state -q .state 2>/dev/null | grep -q OPEN; then
-            gh pr edit data-refresh --body "$body"
-            echo "Updated the open data-refresh PR."
-          elif ! gh pr create --base main --head data-refresh --title "Refresh data" --body "$body"; then
-            echo "::warning::Couldn't open the PR. Open it at https://github.com/${GITHUB_REPOSITORY}/compare/data-refresh?expand=1 (or add the DATA_REFRESH_TOKEN secret to push to main directly)."
-          fi
+          git push origin HEAD:main || {
+            echo "::error::main rejected the push. Remove the 'Require a pull request' rule on main, or add the DATA_REFRESH_TOKEN secret (see the top of this file)."
+            exit 1
+          }
