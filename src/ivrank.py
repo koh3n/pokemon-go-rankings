@@ -2,8 +2,8 @@
 """
 PvP IV rank calculator (Great / Ultra / Master League).
 
-Base stats and the CP multiplier table come from https://iv4u.lima-city.de
-(list/list.js and cpm.js). They are downloaded once and cached in
+Base stats and the CP multiplier table were taken once from https://iv4u.lima-city.de
+(list/list.js and cpm.js) and are cached in
 data/cache/iv_data.json. Ranks are computed locally: for each of the 4096 IV
 combinations the highest level (<= the level cap) that keeps CP under the
 league limit is found, and combinations are ordered by stat product
@@ -138,6 +138,45 @@ def rank_ivs(mon, ia, idf, ist, level_cap=DEFAULT_CAP):
                     "level": lvl, "cp": cp, "percent": round(sp / best * 100, 2),
                     "capped": capped}
     return res
+
+
+def find_exact(name):
+    """One Pokémon by exact name (a "Shadow " prefix is ignored: CP and ranks are the same)."""
+    n = name.strip()
+    if n.lower().startswith("shadow "):
+        n = n[7:]
+    for m in load_data()["mons"]:
+        if m["name"].lower() == n.lower():
+            return m
+    return None
+
+
+def all_spreads(mon, league, level_cap=DEFAULT_CAP):
+    """Every one of the 4096 IV spreads for one league, best first.
+
+    Each row: [rank, atk_iv, def_iv, hp_iv, level, cp, percent, atk, def, hp]
+    where the last three are the in-battle stats. Ties share a rank.
+    """
+    if league not in {k for k, _l, _c in LEAGUES}:
+        raise ValueError("league must be great, ultra or master")
+    if level_cap not in LEVEL_CAPS:
+        raise ValueError(f"level cap must be one of {LEVEL_CAPS}")
+    cpm = load_data()["cpm"]
+    cap_idx = min(int((level_cap - 1) * 2), len(cpm) - 1)
+    rows = _table(mon["atk"], mon["def"], mon["sta"], cap_idx)[league]
+    order = sorted(range(4096), key=lambda i: -rows[i][0])
+    best = rows[order[0]][0]
+    out, rank, prev = [], 0, None
+    for pos, i in enumerate(order):
+        sp, lvl, cp = rows[i]
+        if sp != prev:
+            rank, prev = pos + 1, sp
+        ia, idf, ist = i >> 8, (i >> 4) & 15, i & 15
+        c = cpm[int(round((lvl - 1) * 2))]
+        out.append([rank, ia, idf, ist, lvl, cp, round(sp / best * 100, 2),
+                    round((mon["atk"] + ia) * c, 2), round((mon["def"] + idf) * c, 2),
+                    int((mon["sta"] + ist) * c)])
+    return out
 
 
 def line_of(mon):
