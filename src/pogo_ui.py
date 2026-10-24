@@ -96,10 +96,9 @@ def add_ivs(result, q, ivs, cap):
 
     def ranks_for(name):
         if name not in cache:
-            # shadow Pokémon rank like their normal form (CP ignores the shadow multipliers)
-            base = name[7:] if name.startswith("Shadow ") else name
-            hit = [m for m in ivrank.find_mons(base) if m["name"].lower() == base.lower()]
-            cache[name] = ivrank.rank_ivs(hit[0], atk, dfn, sta, cap) if hit else None
+            # shadow Pokémon rank like their normal form (find_exact ignores "Shadow")
+            mon = ivrank.find_exact(name)
+            cache[name] = ivrank.rank_ivs(mon, atk, dfn, sta, cap) if mon else None
         return cache[name]
 
     for rows in result["rankings"].values():

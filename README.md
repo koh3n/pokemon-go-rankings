@@ -108,11 +108,13 @@ Rank numbers aren't comparable across modes (e.g. Fire-type #38 vs Great League
   4096 spreads for Great/Ultra/Master League (rank, level, CP, stat product %,
   in-battle stats), with a level-cap picker and an IV finder (`0/15/15`, `*/14/*`).
   Everything is computed locally; no request goes to another site at runtime.
-- **IV data**: base stats and CP multipliers were originally taken from
-  https://iv4u.lima-city.de (one-time download, committed as
-  `data/cache/iv_data.json`); ranks are computed locally. Checked against IV4U's
-  own PvP tables: ~99.99% of spreads match exactly, the rest are off by one tie
-  group. Mega and Primal forms are skipped since they can't battle.
+- **IV data**: base stats come from the PvPoke game master (downloaded once,
+  committed as `data/cache/iv_data.json` together with the CP multiplier table);
+  ranks are computed locally. Re-download with
+  `python -c "import sys; sys.path.insert(0, 'src'); import ivrank; ivrank.build_data()"`
+  when new Pokémon are added. GO Hub names are matched to PvPoke's by their words,
+  so form and Shadow wording differences don't matter. Mega, Primal, Dynamax and
+  Gigantamax forms are skipped since they can't battle in PvP.
 - **Rate limits**: if the site answers HTTP 429 the scraper backs off and
   retries. Use `--delay` or `--workers` to go slower.
 - **Name search** uses the site's generation lists. If a name isn't found, use
