@@ -1,0 +1,60 @@
+# Refresh the rankings and deploy to a Hugging Face Space (Docker SDK).
+#
+# Runs nightly, on every push to main, and on demand. Each run re-scrapes the
+# GO Hub data first so a code deploy never replaces fresh data with the older
+# copy committed here. If the scrape fails the committed copy is deployed.
+#
+# One-time setup (repo Settings -> Secrets and variables -> Actions):
+#   secret   HF_TOKEN  Hugging Face access token with write access
+#   variable HF_SPACE  the Space as "username/space-name"
+name: Refresh data and deploy
+
+on:
+  schedule:
+    - cron: "0 3 * * *"       # 03:00 UTC
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_SPACE: ${{ vars.HF_SPACE }}
+    steps:
+      - name: Check Hugging Face settings
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE" ]; then
+            echo "::error::Set the HF_TOKEN secret and the HF_SPACE variable (see the top of this file)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Refresh rankings
+        # refresh_data.py keeps the old file when the new scrape looks incomplete
+        run: python src/refresh_data.py --workers 4 --delay 0.1 || echo "::warning::Refresh failed or was incomplete; deploying the committed data."
+
+      - name: Push to the Space
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Deploy ${GITHUB_SHA::7} ($(date -u +%F))"
+          git push --force "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" HEAD:main
