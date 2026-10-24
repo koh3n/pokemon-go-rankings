@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Dump reference outputs from the Python implementation for the TypeScript tests.
 
-    .venv/bin/python web/scripts/gen_fixtures.py
+    git checkout python-final -- src/ && .venv/bin/python web/scripts/gen_fixtures.py
+
+The Python app was removed from main; the `python-final` tag still has the original
+`ivrank.py` and `pogo_ui.py` this script imports. (Restore `src/` afterwards.)
 
 Writes web/test/fixtures.json: IV spread digests, per-league ranks, name lookups and
 full search results, so the TS port can be checked against the original.
