@@ -2,8 +2,8 @@
 """
 PvP IV rank calculator (Great / Ultra / Master League).
 
-Base stats and the CP multiplier table were taken once from https://iv4u.lima-city.de
-(list/list.js and cpm.js) and are cached in
+Base stats come from the PvPoke game master (pokemon.json). They are downloaded
+once and cached, together with the CP multiplier table, in
 data/cache/iv_data.json. Ranks are computed locally: for each of the 4096 IV
 combinations the highest level (<= the level cap) that keeps CP under the
 league limit is found, and combinations are ordered by stat product
@@ -14,48 +14,80 @@ league limit is found, and combinations are ordered by stat product
 import json
 import re
 import sys
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
 import requests
 
-BASE = "https://iv4u.lima-city.de"
+GAMEMASTER = "https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster/pokemon.json"
 USER_AGENT = "pogo-tier-script/1.0 (personal use, low volume)"
 LEAGUES = [("great", "Great League", 1500), ("ultra", "Ultra League", 2500),
            ("master", "Master League", None)]
 LEVEL_CAPS = (40, 41, 50, 51)
 DEFAULT_CAP = 50
 DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "cache" / "iv_data.json"
-
-_ROW_RE = re.compile(r'^\[(\d+),(\d+),"([^"]*)","([^"]*)",(\d+),(\d+),(\d+),"([^"]*)","([^"]*)","[^"]*",\d+,\d+,"([^"]*)"',
-                     re.M)
+REGIONS = ("Alolan", "Galarian", "Hisuian", "Paldean")
 
 
-def _get(path):
-    r = requests.get(f"{BASE}/{path}", headers={"User-Agent": USER_AGENT}, timeout=30)
-    r.raise_for_status()
-    r.encoding = "utf-8"
-    return r.text
+def _display_name(species_name):
+    """PvPoke "Ninetales (Alolan)" -> "Alolan Ninetales"; other forms stay "Giratina (Altered)"."""
+    species_name = {"Nidoran Female": "Nidoran♀", "Nidoran Male": "Nidoran♂"}.get(species_name, species_name)
+    m = re.match(r"^(.+?) \((.+)\)$", species_name)
+    if m and m.group(2) in REGIONS:
+        return f"{m.group(2)} {m.group(1)}"
+    return species_name
 
 
 def build_data():
-    """Download base stats + CP multipliers and cache them."""
-    cpm_js = _get("cpm.js")
-    m = re.search(r"var cpm\s*=\s*\[([^\]]+)\]", cpm_js)
-    if not m:
-        raise RuntimeError("couldn't find the CP multiplier table on iv4u")
-    cpm = [float(x) for x in m.group(1).split(",")]
+    """Download base stats from the PvPoke game master and cache them with the CP multipliers.
+
+    The CP multiplier table is a fixed game constant, so it is kept from the existing cache.
+    """
+    if not DATA_FILE.exists():
+        raise RuntimeError(f"{DATA_FILE} (with the CP multiplier table) is missing")
+    cpm = json.loads(DATA_FILE.read_text(encoding="utf-8"))["cpm"]
+    r = requests.get(GAMEMASTER, headers={"User-Agent": USER_AGENT}, timeout=60)
+    r.raise_for_status()
+    raw = [g for g in r.json()
+           if not ({"mega", "shadow"} & set(g.get("tags") or []))      # can't battle / same CP as normal
+           and not g["speciesId"].endswith(("_shadow", "_xs", "_xl"))]
+    raw.sort(key=lambda g: (g["dex"], "_" in g["speciesId"], g["speciesId"]))
+
+    # ids: the Pokédex number, or 10000*n + dex for further forms of the same number
+    ids, used, seen = {}, {}, set()
+    for g in raw:
+        n = used.get(g["dex"], 0)
+        used[g["dex"]] = n + 1
+        ids[g["speciesId"]] = g["dex"] + 10000 * n
+    # evolution lines: connect parents and evolutions, then group
+    parent = {sid: sid for sid in ids}
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for g in raw:
+        fam = g.get("family") or {}
+        for other in [fam.get("parent"), *(fam.get("evolutions") or [])]:
+            if other in ids:
+                parent[find(g["speciesId"])] = find(other)
+    lines = {}
+    for sid in ids:
+        lines.setdefault(find(sid), []).append(ids[sid])
 
     mons = []
-    for row in _ROW_RE.finditer(_get("list/list.js")):
-        _, dex, _de, en, a, d, s, _t1, _t2, fam = row.groups()
-        if en.startswith(("Mega ", "Primal ")):      # can't battle in PvP
+    for g in raw:
+        name = _display_name(g["speciesName"])
+        if name in seen:
             continue
-        mons.append({"id": int(dex), "name": en,
-                     "atk": int(a), "def": int(d), "sta": int(s),
-                     "family": [int(x) for x in fam.split(",") if x]})
-    if len(mons) < 500:
-        raise RuntimeError(f"only parsed {len(mons)} Pokémon from iv4u; the page format may have changed")
+        seen.add(name)
+        b = g["baseStats"]
+        sid = g["speciesId"]
+        mons.append({"id": ids[sid], "name": name, "atk": b["atk"], "def": b["def"], "sta": b["hp"],
+                     "family": [i for i in lines[find(sid)] if i != ids[sid]]})
+    if len(mons) < 800:
+        raise RuntimeError(f"only parsed {len(mons)} Pokémon from PvPoke; the data format may have changed")
     data = {"cpm": cpm, "mons": mons}
     DATA_FILE.parent.mkdir(exist_ok=True)
     DATA_FILE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -140,15 +172,43 @@ def rank_ivs(mon, ia, idf, ist, level_cap=DEFAULT_CAP):
     return res
 
 
+_NOISE = {"shadow", "form", "forme", "mode", "style", "size", "breed", "mask"}
+_SYNONYMS = {"sunny": "sunshine", "sword": "blade"}      # GO Hub wording -> PvPoke wording
+_NOT_PVP = {"mega", "primal", "dynamax", "gigantamax", "eternamax"}
+
+
+def _words(name):
+    s = name.lower().replace("♀", " f").replace("♂", " m")
+    s = unicodedata.normalize("NFD", s)
+    words = re.split(r"[^a-z0-9]+", "".join(c for c in s if not unicodedata.combining(c)))
+    return frozenset(_SYNONYMS.get(w, w) for w in words if w and w not in _NOISE)
+
+
+@lru_cache(maxsize=1)
+def _word_index():
+    return [(_words(m["name"]), m) for m in load_data()["mons"]]
+
+
 def find_exact(name):
-    """One Pokémon by exact name (a "Shadow " prefix is ignored: CP and ranks are the same)."""
-    n = name.strip()
-    if n.lower().startswith("shadow "):
-        n = n[7:]
-    for m in load_data()["mons"]:
-        if m["name"].lower() == n.lower():
+    """One Pokémon by name, spelled however the GO Hub spells it. Matching is by the set of
+    words, so word order, "Shadow" and filler like "Forme" don't matter ("Galarian Shadow Meowth",
+    "Therian Forme Tornadus"). The best match is the Pokémon whose words are all in the query
+    and are the most numerous ("Minior (Blue Core)" -> "Minior (Core)", "Ogerpon (Teal Mask)" ->
+    "Ogerpon"); a bare species name falls back to its first listed form. Mega/Primal/Dynamax
+    and Gigantamax Pokémon can't battle in PvP, so they match nothing."""
+    q = _words(name)
+    if not q or q & _NOT_PVP:
+        return None
+    index = _word_index()
+    inside = [(w, m) for w, m in index if w <= q]
+    if inside:
+        return max(inside, key=lambda x: (len(x[0]), sum(map(len, x[0]))))[1]
+    letters = sorted("".join(q))          # PvPoke writes "Irontreads", the GO Hub "Iron Treads"
+    for w, m in index:
+        if sorted("".join(w)) == letters:
             return m
-    return None
+    over = [m for w, m in index if q <= w]
+    return over[0] if over else None
 
 
 def all_spreads(mon, league, level_cap=DEFAULT_CAP):
