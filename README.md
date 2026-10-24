@@ -104,7 +104,7 @@ Rank numbers aren't comparable across modes (e.g. Fire-type #38 vs Great League
 
 ## Notes
 
-- **IV spreads**: each Pokémon's "IV spreads" link opens `/iv?p=<name>`, listing all
+- **IV spreads**: each Pokémon's "IV spreads" link opens a collapsible under the evolution tree, listing all
   4096 spreads for Great/Ultra/Master League (rank, level, CP, stat product %,
   in-battle stats), with a level-cap picker and an IV finder (`0/15/15`, `*/14/*`).
   Everything is computed locally; no request goes to another site at runtime.
