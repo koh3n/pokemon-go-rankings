@@ -1,0 +1,66 @@
+# Re-scrape the GO Hub rankings every night and commit them to main if they changed.
+#
+# Needs main to accept pushes from the Actions token: i.e. no "Require a pull request before
+# merging" rule on main (Settings -> Branches). If you keep that rule, add a repo secret
+# DATA_REFRESH_TOKEN (a fine-grained personal access token from the repo owner with
+# "Contents: Read and write" on this repository); the owner is allowed past the rule, and the
+# workflow uses the secret in place of the default token when it exists.
+#
+# If only the scrape timestamp changed, nothing is committed.
+name: Refresh data
+
+on:
+  schedule:
+    - cron: "0 3 * * *"       # 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.DATA_REFRESH_TOKEN || github.token }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Scrape GO Hub rankings
+        # exits non-zero (and keeps the old file) if the scrape looks incomplete
+        run: python src/refresh_data.py --workers 4 --delay 0.1
+
+      - name: Refresh PvPoke base stats
+        # only changes when new Pokémon are added to the game
+        run: python src/refresh_iv_data.py
+
+      - name: Commit the new data to main
+        run: |
+          # the scrape timestamp changes every run, so compare everything else
+          strip() { jq -S 'del(.scraped_at)' "$1"; }
+          git show HEAD:data/all_rankings.json > /tmp/old_rankings.json
+          if diff -q <(strip /tmp/old_rankings.json) <(strip data/all_rankings.json) >/dev/null \
+             && git diff --quiet -- data/cache/iv_data.json; then
+            echo "No changes since the last refresh."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/all_rankings.json data/cache/iv_data.json
+          git commit -q -m "Refresh data ($(date -u +%F))"
+          git push origin HEAD:main || {
+            echo "::error::main rejected the push. Remove the 'Require a pull request' rule on main, or add the DATA_REFRESH_TOKEN secret (see the top of this file)."
+            exit 1
+          }
