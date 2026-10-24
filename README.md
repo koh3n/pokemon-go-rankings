@@ -104,7 +104,12 @@ Rank numbers aren't comparable across modes (e.g. Fire-type #38 vs Great League
 
 ## Notes
 
-- **IV data** comes from https://iv4u.lima-city.de (downloaded once, cached in
+- **IV spreads**: each Pokémon's "IV spreads" link opens `/iv?p=<name>`, listing all
+  4096 spreads for Great/Ultra/Master League (rank, level, CP, stat product %,
+  in-battle stats), with a level-cap picker and an IV finder (`0/15/15`, `*/14/*`).
+  Everything is computed locally; no request goes to another site at runtime.
+- **IV data**: base stats and CP multipliers were originally taken from
+  https://iv4u.lima-city.de (one-time download, committed as
   `data/cache/iv_data.json`); ranks are computed locally. Checked against IV4U's
   own PvP tables: ~99.99% of spreads match exactly, the rest are off by one tie
   group. Mega and Primal forms are skipped since they can't battle.
