@@ -43,3 +43,9 @@ Type a Pokémon name or Pokédex number and pick which forms to include.
   the site's markup changed; the parser is `parse_rankings()` in
   `pogo_tiers.py`. Dynamax and Gigantamax pages have no ranking section, so
   that warning is normal for them.
+
+## License
+
+The code is MIT licensed (see `LICENSE`). The ranking and base-stat data come from
+[Pokémon GO Hub](https://db.pokemongohub.net) and [PvPoke](https://pvpoke.com) and stay
+under their own terms; Pokémon and Pokémon GO are trademarks of their respective owners.
