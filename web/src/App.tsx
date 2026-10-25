@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EvolutionTree } from './components/EvolutionTree'
 import { IvPanel } from './components/IvPanel'
 import { IvSection } from './components/IvSection'
+import { NameInput } from './components/NameInput'
 import { TierTable } from './components/TierTable'
 import { DEFAULT_CAP, IvRanker, LEVEL_CAPS, type IvData } from './lib/ivrank'
 import { parseIvs, runSearch, type SearchResult } from './lib/search'
@@ -137,14 +138,11 @@ export default function App() {
               if (data) search(data, q, ivText, cap, forms)
             }}
           >
-            <input
-              type="text"
-              list="ivnames"
-              placeholder="Pokémon name or Pokédex number (e.g. charmander, 4)"
-              autoComplete="off"
-              autoFocus
+            <NameInput
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={setQ}
+              names={names}
+              onSubmit={() => data && search(data, q, ivText, cap, forms)}
             />
             <button className="primary" type="submit" disabled={!data}>
               Search
@@ -171,11 +169,6 @@ export default function App() {
                 </option>
               ))}
             </select>
-            <datalist id="ivnames">
-              {names.map((n) => (
-                <option key={n} value={n} />
-              ))}
-            </datalist>
           </div>
           <div className="forms">
             <span>Include forms:</span>

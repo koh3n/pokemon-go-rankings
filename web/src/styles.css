@@ -85,3 +85,10 @@ details.ivsec>summary small{color:var(--muted);font-weight:400;margin-left:6px}
 input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid var(--line);
   border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
 @media (max-width:560px){ th:nth-child(1),td.num{display:none} }
+.suggest{position:relative;flex:1;min-width:200px}
+.suggest input{width:100%}
+.suggestions{position:absolute;z-index:5;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;
+  background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.suggestions li{padding:9px 10px;border-radius:6px;cursor:pointer}
+.suggestions li.on,.suggestions li:hover{background:var(--chip)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}

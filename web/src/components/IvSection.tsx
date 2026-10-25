@@ -90,7 +90,8 @@ function Spreads({ name, ranker }: { name: string; ranker: IvRanker }) {
       {!filtered.length ? (
         <div className="empty">No spreads match.</div>
       ) : (
-        <table>
+        <div className="scroll">
+<table>
           <thead>
             <tr>
               <th>Rank</th>
@@ -122,6 +123,7 @@ function Spreads({ name, ranker }: { name: string; ranker: IvRanker }) {
             ))}
           </tbody>
         </table>
+</div>
       )}
       {left > 0 && (
         <div className="more">
