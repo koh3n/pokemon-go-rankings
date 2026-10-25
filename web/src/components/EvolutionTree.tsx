@@ -6,10 +6,12 @@ function Node({ n, labelOf, onIv }: { n: EvoNode; labelOf: (g: string) => string
   return (
     <li>
       <span className="name">
-        <Sprite dex={n.slug} />
-        <a href={n.url} target="_blank" rel="noopener">
-          {n.name}
-        </a>
+        <span className="who">
+          <Sprite dex={n.slug} />
+          <a href={n.url} target="_blank" rel="noopener">
+            {n.name}
+          </a>
+        </span>
         <ExtraLinks slug={n.slug} name={n.name} onIv={onIv} />
       </span>{' '}
       {n.requires && <span className="chip">{n.requires}</span>}
