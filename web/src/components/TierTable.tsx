@@ -63,10 +63,12 @@ export function TierTable({
               <tr key={`${r.slug}|${r.mode}`}>
                 <td className="num">{i + 1}</td>
                 <td>
-                  <Sprite dex={r.slug} />
-                  <a href={`${BASE}/pokemon/${encodeURIComponent(r.slug)}`} target="_blank" rel="noopener" style={{ color: 'inherit' }}>
-                    {r.pokemon}
-                  </a>
+                  <span className="who">
+                    <Sprite dex={r.slug} />
+                    <a href={`${BASE}/pokemon/${encodeURIComponent(r.slug)}`} target="_blank" rel="noopener" style={{ color: 'inherit' }}>
+                      {r.pokemon}
+                    </a>
+                  </span>
                   <ExtraLinks slug={r.slug} name={r.pokemon} mode={r.mode} onIv={onIv} />
                 </td>
                 <td>{r.mode}</td>

@@ -1,8 +1,7 @@
 import { PVPOKE_CP, pvpokeId } from '../lib/pvpoke'
-import { BASE } from '../lib/tiers'
 
-// Per-Pokémon links: the GO Hub page, the IV spreads section and, for league rows,
-// the PvPoke ranking page. slug may be a plain dex number or a form slug.
+// Per-Pokémon links after the name (which links to the GO Hub page itself): the IV spreads
+// section and, for league rows, the PvPoke ranking page. slug may be a plain dex number or a form slug.
 export function ExtraLinks({
   slug,
   name,
@@ -18,9 +17,6 @@ export function ExtraLinks({
   const cp = mode ? PVPOKE_CP[mode] : undefined
   return (
     <span className="xlinks">
-      <a href={`${BASE}/pokemon/${encodeURIComponent(String(slug))}`} target="_blank" rel="noopener" title="Pokémon GO Hub page">
-        DB
-      </a>
       <a
         href="#ivspreads-card"
         title="All IV spreads for every league"

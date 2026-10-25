@@ -92,3 +92,11 @@ input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid va
 .suggestions li{padding:9px 10px;border-radius:6px;cursor:pointer}
 .suggestions li.on,.suggestions li:hover{background:var(--chip)}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:560px){
+  .who{display:flex;align-items:center}
+  .name{display:inline-block}
+  .xlinks{display:block;margin:2px 0 0 46px}
+  .ivmon h3 small{display:inline-block;margin:2px 8px 0 46px}
+  .ivmon h3 .xlinks{display:inline-block;margin:2px 0 0}
+  .ivmon.sel h3::after{display:block;margin:2px 0 0 46px}
+}

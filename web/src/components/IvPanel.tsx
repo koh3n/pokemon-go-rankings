@@ -1,4 +1,5 @@
 import { pctClass } from '../lib/format'
+import { BASE } from '../lib/tiers'
 import type { IvMon, SearchResult } from '../lib/search'
 import { ExtraLinks } from './ExtraLinks'
 import { Sprite } from './Sprite'
@@ -7,8 +8,12 @@ function Mon({ m, onIv }: { m: IvMon; onIv: (name: string) => void }) {
   return (
     <div className={`ivmon${m.selected ? ' sel' : ''}`}>
       <h3>
-        <Sprite dex={m.id} />
-        {m.name}
+        <span className="who">
+          <Sprite dex={m.id} />
+          <a href={`${BASE}/pokemon/${m.id}`} target="_blank" rel="noopener" style={{ color: 'inherit' }}>
+            {m.name}
+          </a>
+        </span>
         <small>
           #{m.id} · base {m.base.join('/')}
         </small>
