@@ -14,7 +14,8 @@ function Mon({ m, onIv }: { m: IvMon; onIv: (name: string) => void }) {
         </small>
         <ExtraLinks slug={m.id} name={m.name} onIv={onIv} />
       </h3>
-      <table>
+      <div className="scroll">
+<table>
         <thead>
           <tr>
             <th>League</th>
@@ -40,6 +41,7 @@ function Mon({ m, onIv }: { m: IvMon; onIv: (name: string) => void }) {
           ))}
         </tbody>
       </table>
+</div>
     </div>
   )
 }

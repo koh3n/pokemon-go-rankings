@@ -46,7 +46,8 @@ export function TierTable({
       {!rows.length ? (
         <div className="empty">No rankings for this group — these Pokémon aren't ranked in any mode on the site.</div>
       ) : (
-        <table>
+        <div className="scroll">
+<table>
           <thead>
             <tr>
               <th>#</th>
@@ -88,6 +89,7 @@ export function TierTable({
             ))}
           </tbody>
         </table>
+</div>
       )}
       {unranked.length > 0 && (
         <details>
