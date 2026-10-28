@@ -118,9 +118,14 @@ export function tierView(data: MovesetData, slug: string, featuredType: string, 
   })
 }
 
-/** Default featured type: the one whose boost helps this Pokémon most at 1.6x. */
-export function defaultType(data: MovesetData, slug: string): string {
-  const types = moveTypes(data, slug)
+/** The neutral-boss result. No move type is favoured, so it is the same whichever type is featured. */
+export function neutralView(data: MovesetData, slug: string, allowLegacy = true): TierResult | undefined {
+  const first = moveTypes(data, slug)[0]
+  return first === undefined ? undefined : tierView(data, slug, first, allowLegacy)[0]
+}
+
+/** Default featured type among `types`: the one whose boost helps this Pokémon most at 1.6x. */
+export function defaultType(data: MovesetData, slug: string, types: string[] = moveTypes(data, slug)): string {
   let best = types[0] ?? ''
   let bestScore = -1
   for (const t of types) {

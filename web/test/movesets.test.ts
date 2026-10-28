@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { defaultType, hasTierView, moveTypes, tierView, type MovesetData } from '../src/lib/movesets'
+import { defaultType, hasTierView, moveTypes, neutralView, tierView, type MovesetData } from '../src/lib/movesets'
 
 const root = new URL('../../', import.meta.url)
 const data = JSON.parse(readFileSync(new URL('web/test/data/movesets.json', root), 'utf8')) as MovesetData
@@ -60,5 +60,15 @@ describe('behaviour', () => {
   })
   it('picks a default type from the Pokémon\'s own moves', () => {
     expect(moveTypes(data, '94')).toContain(defaultType(data, '94'))
+  })
+  it('only considers the types it is given for the default', () => {
+    expect(defaultType(data, '94', ['ghost', 'poison'])).toMatch(/^(ghost|poison)$/)
+  })
+  it('the neutral result does not depend on which type is featured', () => {
+    for (const slug of ['94', '6', '76-Alola_Shadow', '464'])
+      for (const legacy of [true, false]) {
+        const n = neutralView(data, slug, legacy)
+        for (const t of moveTypes(data, slug)) expect(tierView(data, slug, t, legacy)[0]).toEqual(n)
+      }
   })
 })

@@ -145,6 +145,15 @@ export default function App() {
     setMoveExtras((x) => (x.some((e) => e.slug === slug) ? x : [...x, { slug, name }]))
     setMoveReq((r) => ({ slug, type, nonce: r.nonce + 1 }))
   }, [])
+  // the type lists each Pokémon is ranked in ("Rock-type" -> rock): the only types the moveset card offers
+  const rankedTypes = useMemo(() => {
+    const m = new Map<string, string[]>()
+    for (const p of data?.snap.per_pokemon ?? []) {
+      const types = p.rankings.flatMap((r) => /^(\w+)-type$/i.exec(r.mode)?.[1].toLowerCase() ?? [])
+      m.set(p.slug, [...new Set(types)])
+    }
+    return m
+  }, [data])
   const hasMoves = useCallback((slug: string) => !!data?.movesets?.pokemon[slug], [data])
 
   const names = useMemo(() => (data ? [...new Set(data.ranker.mons.map((m) => m.name))].sort() : []), [data])
@@ -272,8 +281,8 @@ export default function App() {
               <div className="card" id="movesets-card">
                 <h2>Raid movesets by boss weakness</h2>
                 <p className="hint" style={{ margin: '0 0 6px' }}>
-                  The best fast and charged move for each Pokémon when the boss takes normal damage, is weak to a type, or is
-                  double weak to it. Expand one to choose the type.
+                  The best fast and charged move for each Pokémon against a neutral boss, and when the boss is weak or double weak
+                  to one of the types it's ranked for. Expand one to choose the type.
                 </p>
                 <div>
                   {moveSections.map((m) => (
@@ -282,6 +291,7 @@ export default function App() {
                       slug={m.slug}
                       name={m.name}
                       data={data.movesets!}
+                      ranked={rankedTypes.get(m.slug) ?? []}
                       openNonce={moveReq.slug === m.slug ? moveReq.nonce : 0}
                       preset={moveReq.slug === m.slug ? moveReq.type : undefined}
                     />
