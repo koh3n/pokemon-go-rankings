@@ -1,9 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { pctClass } from '../lib/format'
 import type { SearchResult } from '../lib/search'
 import { BASE } from '../lib/tiers'
 import { ExtraLinks } from './ExtraLinks'
 import { Sprite } from './Sprite'
+
+const PAGE_SIZE = 5
 
 export function TierTable({
   result,
@@ -11,18 +13,29 @@ export function TierTable({
   mode,
   onMode,
   onIv,
+  onMoves,
+  hasMoves,
 }: {
   result: SearchResult
   group: string
   mode: string
   onMode: (m: string) => void
   onIv: (name: string) => void
+  onMoves?: (slug: string, name: string, type?: string) => void
+  hasMoves?: (slug: string) => boolean
 }) {
   const all = useMemo(() => result.rankings[group] ?? [], [result, group])
   const modes = useMemo(() => [...new Set(all.map((r) => r.mode))], [all])
   const active = modes.includes(mode) ? mode : ''
   const rows = active ? all.filter((r) => r.mode === active) : all
   const hasIv = !!result.ivs && rows.some((r) => r.iv)
+  // five rankings per page; the page resets whenever the search, group or mode changes
+  const scope = `${result.query}|${group}|${active}`
+  const [pageState, setPageState] = useState({ scope, page: 0 })
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
+  const page = pageState.scope === scope ? Math.min(pageState.page, pages - 1) : 0
+  const goTo = (p: number) => setPageState({ scope, page: p })
+  const shown = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
   const unranked = result.per_pokemon.filter((p) => p.group === group && p.unranked_modes.length)
 
   return (
@@ -46,6 +59,7 @@ export function TierTable({
       {!rows.length ? (
         <div className="empty">No rankings for this group — these Pokémon aren't ranked in any mode on the site.</div>
       ) : (
+        <>
         <div className="scroll">
 <table>
           <thead>
@@ -59,9 +73,9 @@ export function TierTable({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
+            {shown.map((r, i) => (
               <tr key={`${r.slug}|${r.mode}`}>
-                <td className="num">{i + 1}</td>
+                <td className="num">{page * PAGE_SIZE + i + 1}</td>
                 <td>
                   <span className="who">
                     <Sprite dex={r.slug} />
@@ -69,7 +83,13 @@ export function TierTable({
                       {r.pokemon}
                     </a>
                   </span>
-                  <ExtraLinks slug={r.slug} name={r.pokemon} mode={r.mode} onIv={onIv} />
+                  <ExtraLinks
+                    slug={r.slug}
+                    name={r.pokemon}
+                    mode={r.mode}
+                    onIv={onIv}
+                    onMoves={onMoves && hasMoves?.(r.slug) ? () => onMoves(r.slug, r.pokemon, /^(\w+)-type$/i.exec(r.mode)?.[1].toLowerCase()) : undefined}
+                  />
                 </td>
                 <td>{r.mode}</td>
                 <td>
@@ -92,6 +112,20 @@ export function TierTable({
           </tbody>
         </table>
 </div>
+        {pages > 1 && (
+          <div className="pager">
+            <button type="button" disabled={page === 0} onClick={() => goTo(page - 1)}>
+              ‹ Previous
+            </button>
+            <span>
+              {page * PAGE_SIZE + 1}–{Math.min(rows.length, (page + 1) * PAGE_SIZE)} of {rows.length} · page {page + 1} of {pages}
+            </span>
+            <button type="button" disabled={page === pages - 1} onClick={() => goTo(page + 1)}>
+              Next ›
+            </button>
+          </div>
+        )}
+        </>
       )}
       {unranked.length > 0 && (
         <details>

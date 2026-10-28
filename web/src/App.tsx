@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EvolutionTree } from './components/EvolutionTree'
 import { IvPanel } from './components/IvPanel'
 import { IvSection } from './components/IvSection'
+import { MovesetSection, type TypeRank } from './components/MovesetSection'
 import { NameInput } from './components/NameInput'
 import { TierTable } from './components/TierTable'
 import { DEFAULT_CAP, IvRanker, LEVEL_CAPS, type IvData } from './lib/ivrank'
+import type { MovesetData } from './lib/movesets'
 import { parseIvs, runSearch, type SearchResult } from './lib/search'
 import { FORM_GROUPS, type EvoNode, type Snapshot } from './lib/tiers'
 
@@ -24,6 +26,7 @@ const label = (g: string) => LABELS[g] ?? g
 interface Loaded {
   snap: Snapshot
   ranker: IvRanker
+  movesets: MovesetData | null // optional: the rest of the site works without it
 }
 
 function treeNames(nodes: EvoNode[], out: string[] = []): string[] {
@@ -54,6 +57,9 @@ export default function App() {
   // "IV spreads" links: which section to open, plus extra sections for Pokémon outside the tree
   const [ivReq, setIvReq] = useState<{ name: string; nonce: number }>({ name: '', nonce: 0 })
   const [extras, setExtras] = useState<string[]>([])
+  // "Movesets" links: same idea, keyed by the Pokémon's page slug
+  const [moveReq, setMoveReq] = useState<{ slug: string; nonce: number; type?: string }>({ slug: '', nonce: 0 })
+  const [moveExtras, setMoveExtras] = useState<{ slug: string; name: string }[]>([])
 
   const search = useCallback(
     (d: Loaded, query: string, ivRaw: string, capValue: number, formSet: Set<string>) => {
@@ -67,6 +73,8 @@ export default function App() {
         setMode('')
         setExtras([])
         setIvReq({ name: '', nonce: 0 })
+        setMoveExtras([])
+        setMoveReq({ slug: '', nonce: 0 })
         setStatus({ text: '', error: false })
         const params = new URLSearchParams({ q: text })
         if (ivs) Object.entries({ iv: ivs.join('/'), cap: String(capValue) }).forEach(([k, v]) => params.set(k, v))
@@ -79,9 +87,13 @@ export default function App() {
   )
 
   useEffect(() => {
-    Promise.all([loadJson<Snapshot>('all_rankings.json'), loadJson<IvData>('iv_data.json')])
-      .then(([snap, iv]) => {
-        const d = { snap, ranker: new IvRanker(iv) }
+    Promise.all([
+      loadJson<Snapshot>('all_rankings.json'),
+      loadJson<IvData>('iv_data.json'),
+      loadJson<MovesetData>('movesets.json').catch(() => null),
+    ])
+      .then(([snap, iv, movesets]) => {
+        const d = { snap, ranker: new IvRanker(iv), movesets }
         setData(d)
         // run the search in the address bar (?q=azumarill&iv=0/15/15&cap=50)
         const p = new URLSearchParams(location.search)
@@ -116,6 +128,37 @@ export default function App() {
     },
     [setExtras],
   )
+
+  const moveSections = useMemo(() => {
+    if (!result) return []
+    const nodes: { slug: string; name: string }[] = []
+    const walk = (ns: EvoNode[]) =>
+      ns.forEach((n) => {
+        if (!nodes.some((x) => x.slug === n.slug)) nodes.push({ slug: n.slug, name: n.name })
+        walk(n.evolves_to)
+      })
+    walk(result.evolution_tree)
+    return [...nodes, ...moveExtras.filter((e) => !nodes.some((n) => n.slug === e.slug))]
+  }, [result, moveExtras])
+
+  const openMoves = useCallback((slug: string, name: string, type?: string) => {
+    setMoveExtras((x) => (x.some((e) => e.slug === slug) ? x : [...x, { slug, name }]))
+    setMoveReq((r) => ({ slug, type, nonce: r.nonce + 1 }))
+  }, [])
+  // the type lists each Pokémon is ranked in ("Rock-type" -> rock) with its tier and rank: the only types the moveset card offers
+  const rankedTypes = useMemo(() => {
+    const m = new Map<string, TypeRank[]>()
+    for (const p of data?.snap.per_pokemon ?? []) {
+      const best = new Map<string, TypeRank>()
+      for (const r of p.rankings) {
+        const type = /^(\w+)-type$/i.exec(r.mode)?.[1].toLowerCase()
+        if (type && !best.has(type)) best.set(type, { type, tier: r.tier, rank: r.rank })
+      }
+      m.set(p.slug, [...best.values()])
+    }
+    return m
+  }, [data])
+  const hasMoves = useCallback((slug: string) => !!data?.movesets?.pokemon[slug], [data])
 
   const names = useMemo(() => (data ? [...new Set(data.ranker.mons.map((m) => m.name))].sort() : []), [data])
   const asOf = data?.snap.scraped_at ? `· Rankings as of ${data.snap.scraped_at.slice(0, 10)}` : ''
@@ -220,15 +263,46 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <TierTable result={result} group={activeGroup} mode={mode} onMode={setMode} onIv={openIv} />
+              <TierTable
+                result={result}
+                group={activeGroup}
+                mode={mode}
+                onMode={setMode}
+                onIv={openIv}
+                onMoves={openMoves}
+                hasMoves={hasMoves}
+              />
             </div>
 
             <IvPanel result={result} onIv={openIv} />
 
             <div className="card">
               <h2>Evolution tree</h2>
-              <EvolutionTree roots={result.evolution_tree} labelOf={label} onIv={openIv} />
+              <EvolutionTree roots={result.evolution_tree} labelOf={label} onIv={openIv} onMoves={openMoves} hasMoves={hasMoves} />
             </div>
+
+            {data?.movesets && (
+              <div className="card" id="movesets-card">
+                <h2>Raid movesets by boss weakness</h2>
+                <p className="hint" style={{ margin: '0 0 6px' }}>
+                  The best fast and charged move for each Pokémon against a neutral boss, and when the boss is weak or double weak
+                  to one of the types it's ranked for. Expand one to choose the type.
+                </p>
+                <div>
+                  {moveSections.map((m) => (
+                    <MovesetSection
+                      key={`${result.query}|${m.slug}`}
+                      slug={m.slug}
+                      name={m.name}
+                      data={data.movesets!}
+                      ranked={rankedTypes.get(m.slug) ?? []}
+                      openNonce={moveReq.slug === m.slug ? moveReq.nonce : 0}
+                      preset={moveReq.slug === m.slug ? moveReq.type : undefined}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {data && (
               <div className="card" id="ivspreads-card">

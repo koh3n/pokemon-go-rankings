@@ -19,7 +19,8 @@ Cloudflare Pages, Netlify, GitHub Pages...).
 ## How the port is tested
 
 `src/lib/` is a port of the Python code (`ivrank.py`, `pogo_tiers.py`, `pogo_ui.py`).
-`scripts/gen_fixtures.py` runs the Python version and writes `test/fixtures.json`: SHA-256
+`scripts/gen_moveset_fixtures.py` does the same for the moveset calculator (digests of every Pokémon's results, from the pinned
+`test/data/movesets.json`). `scripts/gen_fixtures.py` runs the Python version and writes `test/fixtures.json`: SHA-256
 digests of all 4096 IV spreads for every Pokémon in every league, plus rank lookups, name
 lookups and complete search results. `npm test` checks that the TypeScript output is identical.
 
@@ -33,4 +34,9 @@ first; see the top of `scripts/gen_fixtures.py`.
 - `src/lib/ivrank.ts` – IV math (stat product, levels, CP, all 4096 spreads) and name matching
 - `src/lib/tiers.ts` – tier rankings and evolution tree from the snapshot
 - `src/lib/search.ts` – the search box: name resolution, IV ranks on ranking rows
+- `src/lib/movesets.ts` – best raid moveset per boss-weakness tier (port of `src/moveset_model.py`)
 - `src/components/`, `src/App.tsx` – the UI
+
+## Credits
+
+Type icons in `public/types/` are from [partywhale/pokemon-type-icons](https://github.com/partywhale/pokemon-type-icons) (MIT, license in `public/types/LICENSE.txt`). Pokémon sprites are loaded from the PokeAPI sprites repo.

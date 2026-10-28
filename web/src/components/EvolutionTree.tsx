@@ -2,7 +2,19 @@ import type { EvoNode } from '../lib/tiers'
 import { ExtraLinks } from './ExtraLinks'
 import { Sprite } from './Sprite'
 
-function Node({ n, labelOf, onIv }: { n: EvoNode; labelOf: (g: string) => string; onIv: (name: string) => void }) {
+function Node({
+  n,
+  labelOf,
+  onIv,
+  onMoves,
+  hasMoves,
+}: {
+  n: EvoNode
+  labelOf: (g: string) => string
+  onIv: (name: string) => void
+  onMoves?: (slug: string, name: string) => void
+  hasMoves?: (slug: string) => boolean
+}) {
   return (
     <li>
       <span className="name">
@@ -12,7 +24,7 @@ function Node({ n, labelOf, onIv }: { n: EvoNode; labelOf: (g: string) => string
             {n.name}
           </a>
         </span>
-        <ExtraLinks slug={n.slug} name={n.name} onIv={onIv} />
+        <ExtraLinks slug={n.slug} name={n.name} onIv={onIv} onMoves={onMoves && hasMoves?.(n.slug) ? () => onMoves(n.slug, n.name) : undefined} />
       </span>{' '}
       {n.requires && <span className="chip">{n.requires}</span>}
       {n.forms.length > 0 && (
@@ -29,7 +41,7 @@ function Node({ n, labelOf, onIv }: { n: EvoNode; labelOf: (g: string) => string
       {n.evolves_to.length > 0 && (
         <ul>
           {n.evolves_to.map((c) => (
-            <Node key={c.slug} n={c} labelOf={labelOf} onIv={onIv} />
+            <Node key={c.slug} n={c} labelOf={labelOf} onIv={onIv} onMoves={onMoves} hasMoves={hasMoves} />
           ))}
         </ul>
       )}
@@ -41,15 +53,19 @@ export function EvolutionTree({
   roots,
   labelOf,
   onIv,
+  onMoves,
+  hasMoves,
 }: {
   roots: EvoNode[]
   labelOf: (g: string) => string
   onIv: (name: string) => void
+  onMoves?: (slug: string, name: string) => void
+  hasMoves?: (slug: string) => boolean
 }) {
   return (
     <ul className="tree">
       {roots.map((n) => (
-        <Node key={n.slug} n={n} labelOf={labelOf} onIv={onIv} />
+        <Node key={n.slug} n={n} labelOf={labelOf} onIv={onIv} onMoves={onMoves} hasMoves={hasMoves} />
       ))}
     </ul>
   )

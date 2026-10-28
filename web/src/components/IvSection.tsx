@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { LEAGUES, LEVEL_CAPS, type IvRanker, type LeagueKey } from '../lib/ivrank'
 import { pctClass } from '../lib/format'
+import { Sprite } from './Sprite'
 
 const PAGE = 100
 
@@ -153,7 +154,10 @@ export function IvSection({ name, ranker, openNonce }: { name: string; ranker: I
 
   return (
     <details className="ivsec" ref={ref} onToggle={(e) => e.currentTarget.open && setOpened(true)}>
-      <summary>{name}</summary>
+      <summary>
+        <Sprite dex={(ranker.findExact(name)?.id ?? 0) % 10000} />
+        {name}
+      </summary>
       <div className="ivbody">{opened && <Spreads name={name} ranker={ranker} />}</div>
     </details>
   )

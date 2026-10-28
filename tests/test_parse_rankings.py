@@ -39,6 +39,19 @@ class ParseRankings(unittest.TestCase):
         self.assertEqual(parse(html), ([{"mode": "Great League", "tier": "A", "rank": 259},
                                         {"mode": "Fire-type", "tier": "B+", "rank": 12}], ["Raid Attacker"]))
 
+    def test_two_letter_ss_tier(self):
+        # GO Hub added an SS tier above S; it used to be mistaken for a mode name and the ranking was lost
+        html = ('<h3>X Tier Ranking</h3><div class="PokemonPageRenderers_tierRankingsContainer_x">'
+                '<div><span>Raid Attacker</span><div>SS</div><div>#</div><div>2</div></div>'
+                '<div><span>Psychic-type</span><div>SS</div><div>#</div><div>1</div></div>'
+                '<div><span>Fire-type</span><div>S+</div><div>#</div><div>5</div></div></div>')
+        self.assertEqual(parse(html)[0], [{"mode": "Raid Attacker", "tier": "SS", "rank": 2},
+                                          {"mode": "Psychic-type", "tier": "SS", "rank": 1},
+                                          {"mode": "Fire-type", "tier": "S+", "rank": 5}])
+
+    def test_ss_sorts_above_s(self):
+        self.assertLess(pt.TIER_INDEX["SS"], pt.TIER_INDEX["S+"])
+
     def test_tier_without_a_rank(self):
         html = '<h3>X Tier Ranking</h3><div>Fire-type</div><div>C</div><div>Ice-type</div><div>D</div>'
         self.assertEqual(parse(html)[0], [{"mode": "Fire-type", "tier": "C", "rank": None},
@@ -54,11 +67,12 @@ class RefreshSafeguard(unittest.TestCase):
             {"slug": str(i), "rankings": [{"mode": "m", "tier": "A", "rank": 1}] * rankings_per_page}
             for i in range(pages)]}
 
-    def refresh(self, old, new):
+    def refresh(self, old, new, lists_failed=None):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "all_rankings.json"
             path.write_text(json.dumps(old))
-            with mock.patch.object(pt, "build_all", return_value=new):
+            with mock.patch.object(pt, "build_all", return_value=new), \
+                    mock.patch.object(pt, "add_off_type_rankings", return_value=(0, lists_failed or [])):
                 ok, msg = pt.refresh_snapshot(path, d)
             return ok, msg, json.loads(path.read_text())
 
@@ -67,6 +81,13 @@ class RefreshSafeguard(unittest.TestCase):
         ok, msg, saved = self.refresh(old, self.snapshot(0))   # right page count, nothing parsed
         self.assertFalse(ok)
         self.assertIn("rankings", msg)
+        self.assertEqual(saved, old)
+
+    def test_keeps_old_data_when_a_type_list_cannot_be_read(self):
+        old = self.snapshot(3)
+        ok, msg, saved = self.refresh(old, self.snapshot(3), lists_failed=["ghost"])
+        self.assertFalse(ok)
+        self.assertIn("ghost", msg)
         self.assertEqual(saved, old)
 
     def test_saves_a_good_scrape(self):

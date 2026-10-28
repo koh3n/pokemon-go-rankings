@@ -100,3 +100,31 @@ input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid va
   .ivmon h3 .xlinks{display:inline-block;margin:2px 0 0}
   .ivmon.sel h3::after{display:block;margin:2px 0 0 46px}
 }
+.legacy{display:flex;align-items:center;gap:6px;margin:0 0 10px;font-size:13px;color:var(--muted)}
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tier-card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.tier-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.tier-mult .badge{font-size:11px;padding:0 6px;margin-right:4px}
+.tier-mult{font-variant-numeric:tabular-nums;font-size:12px;color:var(--accent);font-weight:700}
+.tier-moves{font-weight:600}
+.tier-edps{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.tier-close{margin:6px 0 0}
+@media (max-width:700px){.tiers{grid-template-columns:1fr}}
+.tiers.one{grid-template-columns:minmax(0,1fr)}
+.tiers.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:700px){.tiers.two{grid-template-columns:1fr}}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:13px;color:var(--muted)}
+.pager button{padding:6px 12px;font-size:13px}
+.pager button:disabled{opacity:.45;cursor:default}
+.pager span{text-align:center;font-variant-numeric:tabular-nums}
+details.ivsec>summary .spr{width:32px;height:32px;margin-right:8px}
+.tico{width:20px;height:20px;display:block;flex:none}
+.tier-close .tico{width:16px;height:16px}
+/* icon + name: centre the icon on the text's line instead of nudging it off the baseline */
+.mv{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.mv-sep{margin:0 6px}
+.tab-type{display:inline-flex;align-items:center;gap:6px}
+.tier-moves{display:flex;align-items:center;flex-wrap:wrap}
+.tier-close{display:flex;align-items:center;flex-wrap:wrap;gap:0 4px}
+.ivbody .tiers.one{margin-bottom:12px}
+.ivbody .tiers.one + .hint{margin-top:0}

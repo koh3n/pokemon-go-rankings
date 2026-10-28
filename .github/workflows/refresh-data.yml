@@ -45,20 +45,25 @@ jobs:
         # only changes when new Pokémon are added to the game
         run: python src/refresh_iv_data.py
 
+      - name: Refresh raid movesets
+        # ~2 minutes; keeps the old file if the new data looks incomplete. A failure here must not
+        # stop the rankings from being published, so it only warns.
+        run: python src/refresh_movesets.py || echo "::warning::Moveset refresh failed or was incomplete; keeping the previous data."
+
       - name: Commit the new data to main
         run: |
           # the scrape timestamp changes every run, so compare everything else
           strip() { jq -S 'del(.scraped_at)' "$1"; }
           git show HEAD:data/all_rankings.json > /tmp/old_rankings.json
           if diff -q <(strip /tmp/old_rankings.json) <(strip data/all_rankings.json) >/dev/null \
-             && git diff --quiet -- data/cache/iv_data.json; then
+             && git diff --quiet -- data/cache/iv_data.json data/movesets.json; then
             echo "No changes since the last refresh."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/all_rankings.json data/cache/iv_data.json
+          git add data/all_rankings.json data/cache/iv_data.json data/movesets.json
           git commit -q -m "Refresh data ($(date -u +%F))"
           # main may have moved since this run checked it out (a merge during the ~4 min scrape);
           # only this workflow touches the data files, so rebasing onto the latest main is safe
