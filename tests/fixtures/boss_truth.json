@@ -1,0 +1,58 @@
+{
+ "boss_types": {
+  "Kyogre": [
+   "water"
+  ],
+  "Gyarados": [
+   "water",
+   "flying"
+  ],
+  "Moltres": [
+   "fire",
+   "flying"
+  ],
+  "Mewtwo": [
+   "psychic"
+  ],
+  "Groudon": [
+   "ground"
+  ]
+ },
+ "tables": {
+  "76-Alola_Shadow": {
+   "Groudon": "Rock Throw/Rock Blast:7.28;Rock Throw/Stone Edge:7.21;Rollout*/Rock Blast:7.10;Rollout*/Stone Edge:6.97;Rock Throw/Wild Charge:6.66;Rollout*/Wild Charge:6.31;Volt Switch/Rock Blast:6.24;Volt Switch/Stone Edge:5.66;Volt Switch/Wild Charge:5.32",
+   "Gyarados": "Volt Switch/Wild Charge:41.06;Rollout*/Wild Charge:37.76;Rock Throw/Wild Charge:34.96;Volt Switch/Stone Edge:25.85;Volt Switch/Rock Blast:24.55;Rock Throw/Stone Edge:22.29;Rock Throw/Rock Blast:22.16;Rollout*/Stone Edge:21.63;Rollout*/Rock Blast:21.63",
+   "Kyogre": "Volt Switch/Wild Charge:21.03;Rollout*/Wild Charge:19.14;Rock Throw/Wild Charge:18.10;Volt Switch/Stone Edge:13.11;Volt Switch/Rock Blast:12.47;Rock Throw/Stone Edge:11.88;Rock Throw/Rock Blast:11.79;Rollout*/Rock Blast:11.13;Rollout*/Stone Edge:11.03",
+   "Mewtwo": "Rollout*/Wild Charge:16.62;Rock Throw/Wild Charge:16.44;Volt Switch/Wild Charge:16.18;Rock Throw/Stone Edge:14.23;Rock Throw/Rock Blast:14.16;Rollout*/Rock Blast:13.61;Rollout*/Stone Edge:13.60;Volt Switch/Rock Blast:13.15;Volt Switch/Stone Edge:12.91",
+   "Moltres": "Rock Throw/Stone Edge:37.15;Rock Throw/Rock Blast:36.89;Rollout*/Rock Blast:35.57;Rollout*/Stone Edge:35.48;Rock Throw/Wild Charge:33.91;Rollout*/Wild Charge:31.19;Volt Switch/Rock Blast:30.78;Volt Switch/Stone Edge:28.61;Volt Switch/Wild Charge:26.51"
+  },
+  "94": {
+   "Groudon": "Sucker Punch/Shadow Ball:13.96;Lick*/Shadow Ball:13.96;Shadow Claw/Shadow Ball:13.82;Hex/Shadow Ball:13.22;Shadow Claw/Psychic*:12.18;Sucker Punch/Psychic*:11.94;Lick*/Psychic*:11.94;Shadow Claw/Focus Blast:11.92;Sucker Punch/Focus Blast:11.59;Lick*/Focus Blast:11.59",
+   "Gyarados": "Lick*/Shadow Ball:17.25;Shadow Claw/Shadow Ball:16.86;Lick*/Sludge Bomb:16.69;Hex/Shadow Ball:16.55;Shadow Claw/Sludge Bomb:16.39;Sucker Punch/Shadow Ball:16.25;Hex/Sludge Bomb:15.91;Sucker Punch/Sludge Bomb:15.61;Shadow Claw/Psychic*:14.83;Lick*/Psychic*:14.73",
+   "Kyogre": "Sucker Punch/Shadow Ball:13.96;Lick*/Shadow Ball:13.96;Shadow Claw/Shadow Ball:13.82;Sucker Punch/Sludge Bomb:13.46;Lick*/Sludge Bomb:13.46;Shadow Claw/Sludge Bomb:13.42;Hex/Shadow Ball:13.22;Hex/Sludge Bomb:12.65;Shadow Claw/Psychic*:12.18;Sucker Punch/Psychic*:11.94",
+   "Mewtwo": "Lick*/Shadow Ball:27.55;Shadow Claw/Shadow Ball:26.21;Hex/Shadow Ball:26.06;Sucker Punch/Shadow Ball:25.59;Lick*/Dark Pulse*:21.07;Shadow Claw/Dark Pulse*:20.96;Lick*/Shadow Punch*:20.92;Shadow Claw/Shadow Punch*:20.84;Shadow Claw/Sludge Bomb:20.00;Lick*/Sludge Bomb:19.87",
+   "Moltres": "Lick*/Shadow Ball:17.49;Shadow Claw/Shadow Ball:17.05;Lick*/Sludge Bomb:16.95;Hex/Shadow Ball:16.79;Shadow Claw/Sludge Bomb:16.59;Sucker Punch/Shadow Ball:16.49;Hex/Sludge Bomb:16.00;Sucker Punch/Sludge Bomb:15.72;Shadow Claw/Psychic*:15.01;Lick*/Psychic*:14.97"
+  },
+  "6": {
+   "Groudon": "Fire Spin/Blast Burn*:11.83;Wing Attack*/Blast Burn*:11.32;Dragon Breath*/Blast Burn*:11.07;Ember*/Blast Burn*:11.07;Air Slash/Blast Burn*:11.01;Fire Spin/Overheat:10.51;Fire Spin/Flamethrower*:10.30;Fire Spin/Fire Blast:9.96;Wing Attack*/Overheat:9.76;Dragon Breath*/Overheat:9.64",
+   "Gyarados": "Air Slash/Dragon Claw:11.10;Air Slash/Blast Burn*:10.76;Wing Attack*/Dragon Claw:10.52;Air Slash/Air Cutter:10.50;Air Slash/Overheat:10.26;Wing Attack*/Blast Burn*:10.17;Dragon Breath*/Dragon Claw:9.95;Air Slash/Flamethrower*:9.92;Air Slash/Fire Blast:9.88;Wing Attack*/Air Cutter:9.77",
+   "Kyogre": "Dragon Breath*/Dragon Claw:8.86;Air Slash/Dragon Claw:8.78;Wing Attack*/Dragon Claw:8.66;Dragon Breath*/Blast Burn*:8.54;Air Slash/Blast Burn*:8.51;Wing Attack*/Blast Burn*:8.37;Dragon Breath*/Air Cutter:8.31;Air Slash/Air Cutter:8.29;Dragon Breath*/Overheat:8.10;Wing Attack*/Air Cutter:8.09",
+   "Mewtwo": "Fire Spin/Blast Burn*:14.12;Wing Attack*/Blast Burn*:13.23;Air Slash/Blast Burn*:13.20;Ember*/Blast Burn*:12.91;Fire Spin/Overheat:12.42;Fire Spin/Flamethrower*:12.32;Dragon Breath*/Blast Burn*:12.20;Fire Spin/Fire Blast:11.83;Air Slash/Flamethrower*:11.42;Air Slash/Overheat:11.37",
+   "Moltres": "Air Slash/Dragon Claw:11.19;Air Slash/Blast Burn*:10.80;Wing Attack*/Dragon Claw:10.58;Air Slash/Air Cutter:10.47;Wing Attack*/Blast Burn*:10.30;Air Slash/Overheat:10.26;Dragon Breath*/Dragon Claw:9.99;Air Slash/Flamethrower*:9.91;Air Slash/Fire Blast:9.80;Dragon Breath*/Blast Burn*:9.79"
+  },
+  "68-Shadow": {
+   "Groudon": "Counter/Dynamic Punch:12.99;Karate Chop*/Dynamic Punch:12.54;Counter/Cross Chop:11.78;Counter/Heavy Slam:11.67;Counter/Close Combat:11.54;Counter/Submission*:11.49;Bullet Punch/Dynamic Punch:11.34;Counter/Payback*:10.97;Karate Chop*/Cross Chop:10.82;Karate Chop*/Heavy Slam:10.75",
+   "Gyarados": "Karate Chop*/Rock Slide:15.88;Counter/Rock Slide:14.85;Bullet Punch/Rock Slide:14.32;Karate Chop*/Stone Edge*:13.20;Counter/Stone Edge*:12.34;Bullet Punch/Stone Edge*:11.38;Counter/Dynamic Punch:10.10;Karate Chop*/Dynamic Punch:9.92;Counter/Payback*:9.85;Karate Chop*/Payback*:9.71",
+   "Kyogre": "Counter/Dynamic Punch:12.99;Karate Chop*/Dynamic Punch:12.54;Counter/Cross Chop:11.78;Counter/Close Combat:11.54;Counter/Submission*:11.49;Counter/Rock Slide:11.33;Counter/Payback*:10.97;Counter/Stone Edge*:10.92;Karate Chop*/Cross Chop:10.82;Karate Chop*/Close Combat:10.52",
+   "Mewtwo": "Bullet Punch/Payback*:12.33;Karate Chop*/Payback*:12.02;Bullet Punch/Heavy Slam:11.70;Bullet Punch/Rock Slide:11.30;Karate Chop*/Heavy Slam:11.12;Karate Chop*/Rock Slide:10.72;Counter/Payback*:10.50;Counter/Heavy Slam:10.41;Bullet Punch/Dynamic Punch:10.41;Bullet Punch/Stone Edge*:10.19",
+   "Moltres": "Karate Chop*/Rock Slide:24.12;Bullet Punch/Rock Slide:21.72;Counter/Rock Slide:20.95;Karate Chop*/Stone Edge*:19.11;Bullet Punch/Stone Edge*:16.59;Counter/Stone Edge*:15.87;Karate Chop*/Dynamic Punch:10.39;Karate Chop*/Payback*:10.25;Counter/Dynamic Punch:10.02;Counter/Payback*:9.67"
+  },
+  "464": {
+   "Groudon": "Mud-Slap/Surf:14.33;Mud-Slap/Earthquake:12.27;Mud-Slap/Breaking Swipe:12.16;Mud-Slap/Drill Run:12.11;Smack Down/Surf:11.53;Mud-Slap/Skull Bash:11.19;Mud-Slap/Superpower:10.83;Smack Down/Drill Run:10.08;Mud-Slap/Rock Wrecker*:10.02;Smack Down/Earthquake:9.80",
+   "Gyarados": "Smack Down/Rock Wrecker*:25.17;Smack Down/Stone Edge:21.93;Mud-Slap/Rock Wrecker*:19.46;Smack Down/Breaking Swipe:18.87;Smack Down/Skull Bash:18.28;Smack Down/Surf:16.15;Smack Down/Earthquake:16.09;Smack Down/Drill Run:16.09;Smack Down/Superpower:16.09;Mud-Slap/Stone Edge:13.09",
+   "Kyogre": "Mud-Slap/Rock Wrecker*:13.23;Smack Down/Rock Wrecker*:12.97;Mud-Slap/Earthquake:12.27;Mud-Slap/Breaking Swipe:12.16;Mud-Slap/Drill Run:12.11;Smack Down/Earthquake:12.06;Smack Down/Breaking Swipe:11.95;Smack Down/Drill Run:11.94;Mud-Slap/Stone Edge:11.44;Smack Down/Stone Edge:11.31",
+   "Mewtwo": "Mud-Slap/Rock Wrecker*:16.39;Smack Down/Rock Wrecker*:16.02;Mud-Slap/Earthquake:14.91;Mud-Slap/Breaking Swipe:14.84;Mud-Slap/Drill Run:14.72;Smack Down/Earthquake:14.62;Smack Down/Breaking Swipe:14.52;Smack Down/Drill Run:14.47;Mud-Slap/Stone Edge:14.05;Smack Down/Stone Edge:13.83",
+   "Moltres": "Smack Down/Rock Wrecker*:41.53;Smack Down/Stone Edge:36.14;Mud-Slap/Rock Wrecker*:31.26;Smack Down/Surf:29.60;Smack Down/Breaking Swipe:27.20;Smack Down/Skull Bash:26.81;Smack Down/Earthquake:26.38;Smack Down/Drill Run:26.38;Smack Down/Superpower:26.38;Mud-Slap/Stone Edge:20.52"
+  }
+ }
+}
