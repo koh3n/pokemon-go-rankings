@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Sprite } from './Sprite'
+import { TypeIcon } from './TypeIcon'
 import { MAX_FIT_ERROR, defaultType, hasTierView, moveTypes, neutralView, tierView, type MovesetData, type Pick, type TierResult } from '../lib/movesets'
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -12,8 +14,10 @@ function Moves({ p }: { p: Pick }) {
     ) : null
   return (
     <>
+      <TypeIcon type={p.fastType} />
       {p.fast}
-      {star(p.fastLegacy)} / {p.charged}
+      {star(p.fastLegacy)} / <TypeIcon type={p.chargedType} />
+      {p.charged}
       {star(p.chargedLegacy)}
     </>
   )
@@ -77,6 +81,7 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
           <div className="tabs" role="tablist" aria-label="Type the boss is weak to">
             {types.map((t) => (
               <button key={t} type="button" className="tab" role="tab" aria-selected={t === type} onClick={() => setPicked(t)}>
+                <TypeIcon type={t} />
                 {cap(t)}
               </button>
             ))}
@@ -121,7 +126,10 @@ export function MovesetSection({
   const fits = hasTierView(data, slug)
   return (
     <details className="ivsec" ref={ref} onToggle={(e) => e.currentTarget.open && setOpened(true)}>
-      <summary>{name}</summary>
+      <summary>
+        <Sprite dex={slug} />
+        {name}
+      </summary>
       <div className="ivbody">
         {opened &&
           (!known ? (

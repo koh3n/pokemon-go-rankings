@@ -38,7 +38,9 @@ interface Move {
 
 export interface Pick {
   fast: string
+  fastType: string
   charged: string
+  chargedType: string
   fastLegacy: boolean
   chargedLegacy: boolean
   edps: number
@@ -109,7 +111,9 @@ export function tierView(data: MovesetData, slug: string, featuredType: string, 
       step,
       picks: rows.slice(0, 2).map((r) => ({
         fast: r.f.name,
+        fastType: r.f.type,
         charged: r.c.name,
+        chargedType: r.c.type,
         fastLegacy: r.f.legacy,
         chargedLegacy: r.c.legacy,
         edps: r.dps * e.f,
