@@ -45,6 +45,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import requests
+import movesets
 from bs4 import BeautifulSoup, Comment
 
 BASE = "https://db.pokemongohub.net"
@@ -578,6 +579,58 @@ def load_snapshot(path):
         return None
 
 
+TYPES = ["normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost", "steel", "fire", "water",
+         "grass", "electric", "psychic", "ice", "dragon", "dark", "fairy"]
+OFF_TYPE_TOP = 50     # only off-type attackers this high in a type's list are kept
+
+
+def add_off_type_rankings(snap, fetch, top=OFF_TYPE_TOP):
+    """Add the per-type list rankings that a Pokémon's own page doesn't show.
+
+    A page only has tiles for the Pokémon's own types, but GO Hub's best-per-type lists also include
+    "off-type attackers": Mega Mewtwo Y (Psychic) is #2 in Ghost because it has Shadow Ball. Those rows
+    are added, marked "off_type", when they are in the top `top` of that list; lower ones (Rhyperior is
+    #62 in Water) would only be noise. Rows added earlier are replaced, so this can be re-run.
+    Returns (rows added, types whose list could not be read).
+    """
+    by_slug = {p["slug"]: p for p in snap["per_pokemon"]}
+    for p in snap["per_pokemon"]:
+        p["rankings"] = [r for r in p["rankings"] if not r.get("off_type")]
+    added, failed = 0, []
+    for t in TYPES:
+        try:
+            rows = movesets.parse_type_list(fetch.get(f"/pokemon-list/best-per-type/{t}"))
+        except (SystemExit, requests.RequestException):
+            rows = None
+        if not rows:
+            failed.append(t)
+            continue
+        mode = f"{t.capitalize()}-type"
+        for r in rows:
+            p = by_slug.get(r["slug"])
+            if r["rank"] > top or p is None or any(x["mode"] == mode for x in p["rankings"]):
+                continue
+            p["rankings"].append({"mode": mode, "tier": r["tier"], "rank": r["rank"], "off_type": True})
+            added += 1
+    snap["rankings"] = group_rankings(snap["per_pokemon"])
+    return added, failed
+
+
+def refresh_lists(path, cache_dir, delay=0.2):
+    """Re-read only the 18 per-type lists and update the off-type rankings in an existing snapshot."""
+    path = Path(path)
+    snap = load_snapshot(path)
+    if snap is None:
+        return False, f"can't read {path}"
+    added, failed = add_off_type_rankings(snap, Fetcher(cache_dir, delay, refresh=True, store=False))
+    if failed:
+        return False, f"kept old data: couldn't read the list for {', '.join(failed)}"
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(snap, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, path)
+    return True, f"{added} off-type rankings (top {OFF_TYPE_TOP} of a list)"
+
+
 def refresh_snapshot(path, cache_dir, workers=4, delay=0.2):
     """Re-scrape the whole site and replace the snapshot file atomically.
 
@@ -590,10 +643,13 @@ def refresh_snapshot(path, cache_dir, workers=4, delay=0.2):
     old = load_snapshot(path)
     fetch = Fetcher(cache_dir, delay, refresh=True, store=False)
     new = build_all(fetch, workers)
+    added, list_failures = add_off_type_rankings(new, fetch)
     n, failed = new["pages_scraped"], len(new["pages_failed"])
     old_n = old.get("pages_scraped", 0) if old else 0
     if n < 0.9 * old_n or failed > 0.05 * max(n, 1):
         return False, f"kept old data: new scrape has {n} pages ({failed} failed), old had {old_n}"
+    if list_failures:
+        return False, f"kept old data: couldn't read the per-type list for {', '.join(list_failures)}"
     count = lambda snap: sum(len(p["rankings"]) for p in snap["per_pokemon"])
     new_r, old_r = count(new), count(old) if old else 0
     if new_r < 0.9 * old_r:
@@ -602,7 +658,7 @@ def refresh_snapshot(path, cache_dir, workers=4, delay=0.2):
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(new, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     os.replace(tmp, path)
-    return True, f"saved {n} pages, {new_r} rankings ({failed} failed)"
+    return True, f"saved {n} pages, {new_r} rankings, {added} of them off-type list rankings ({failed} failed)"
 
 
 def build_from_snapshot(snap, query, wanted_groups):

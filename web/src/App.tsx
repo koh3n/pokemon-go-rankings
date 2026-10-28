@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { EvolutionTree } from './components/EvolutionTree'
 import { IvPanel } from './components/IvPanel'
 import { IvSection } from './components/IvSection'
-import { MovesetSection } from './components/MovesetSection'
+import { MovesetSection, type TypeRank } from './components/MovesetSection'
 import { NameInput } from './components/NameInput'
 import { TierTable } from './components/TierTable'
 import { DEFAULT_CAP, IvRanker, LEVEL_CAPS, type IvData } from './lib/ivrank'
@@ -145,12 +145,16 @@ export default function App() {
     setMoveExtras((x) => (x.some((e) => e.slug === slug) ? x : [...x, { slug, name }]))
     setMoveReq((r) => ({ slug, type, nonce: r.nonce + 1 }))
   }, [])
-  // the type lists each Pokémon is ranked in ("Rock-type" -> rock): the only types the moveset card offers
+  // the type lists each Pokémon is ranked in ("Rock-type" -> rock) with its tier and rank: the only types the moveset card offers
   const rankedTypes = useMemo(() => {
-    const m = new Map<string, string[]>()
+    const m = new Map<string, TypeRank[]>()
     for (const p of data?.snap.per_pokemon ?? []) {
-      const types = p.rankings.flatMap((r) => /^(\w+)-type$/i.exec(r.mode)?.[1].toLowerCase() ?? [])
-      m.set(p.slug, [...new Set(types)])
+      const best = new Map<string, TypeRank>()
+      for (const r of p.rankings) {
+        const type = /^(\w+)-type$/i.exec(r.mode)?.[1].toLowerCase()
+        if (type && !best.has(type)) best.set(type, { type, tier: r.tier, rank: r.rank })
+      }
+      m.set(p.slug, [...best.values()])
     }
     return m
   }, [data])

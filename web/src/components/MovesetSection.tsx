@@ -3,6 +3,12 @@ import { Sprite } from './Sprite'
 import { TypeIcon } from './TypeIcon'
 import { MAX_FIT_ERROR, defaultType, hasTierView, moveTypes, neutralView, tierView, type MovesetData, type Pick, type TierResult } from '../lib/movesets'
 
+export interface TypeRank {
+  type: string
+  tier: string
+  rank: number | null
+}
+
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 function Moves({ p }: { p: Pick }) {
@@ -33,14 +39,25 @@ function Moves({ p }: { p: Pick }) {
   )
 }
 
-function TierCard({ title, mult, tier }: { title: string; mult: string; tier: TierResult | undefined }) {
+function Badge({ r }: { r: TypeRank | undefined }) {
+  return r ? (
+    <span className={`badge tier-${r.tier[0].toLowerCase()}`}>
+      {r.tier}
+      {r.rank != null && ` #${r.rank}`}
+    </span>
+  ) : null
+}
+
+function TierCard({ title, mult, tier, rank }: { title: string; mult: string; tier: TierResult | undefined; rank?: TypeRank }) {
   const [best, second] = tier?.picks ?? []
   const close = second && best && second.edps >= best.edps * 0.97
   return (
     <div className="tier-card">
       <div className="tier-head">
         <b>{title}</b>
-        <span className="tier-mult">{mult}</span>
+        <span className="tier-mult">
+          <Badge r={rank} /> {mult}
+        </span>
       </div>
       {best ? (
         <>
@@ -61,11 +78,12 @@ function TierCard({ title, mult, tier }: { title: string; mult: string; tier: Ti
   )
 }
 
-function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string; ranked: string[]; preset?: string }) {
+function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string; ranked: TypeRank[]; preset?: string }) {
   // only the types GO Hub ranks this Pokémon for (and that it has a move of)
-  const types = useMemo(() => moveTypes(data, slug).filter((t) => ranked.includes(t)), [data, slug, ranked])
+  const types = useMemo(() => moveTypes(data, slug).filter((t) => ranked.some((r) => r.type === t)), [data, slug, ranked])
   const [picked, setPicked] = useState<string | null>(null) // the user's own choice, if any
   const type = picked ?? (preset && types.includes(preset) ? preset : defaultType(data, slug, types))
+  const rankOf = (t: string) => ranked.find((r) => r.type === t)
   const [hideLegacy, setHideLegacy] = useState(false)
   const neutral = useMemo(() => neutralView(data, slug, !hideLegacy), [data, slug, hideLegacy])
   const weak = useMemo(() => (type ? tierView(data, slug, type, !hideLegacy) : []), [data, slug, type, hideLegacy])
@@ -77,7 +95,7 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
       </label>
 
       <div className="tiers one">
-        <TierCard title="Normal damage from every type" mult="1×" tier={neutral} />
+        <TierCard title="Neutral damage" mult="1×" tier={neutral} />
       </div>
 
       {types.length === 0 ? (
@@ -95,8 +113,8 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
             ))}
           </div>
           <div className="tiers two">
-            <TierCard title={`Weak to ${cap(type)}`} mult="1.6×" tier={weak[1]} />
-            <TierCard title={`Double weak to ${cap(type)}`} mult="2.56×" tier={weak[2]} />
+            <TierCard title={`Super effective ${cap(type)}`} mult="1.6×" tier={weak[1]} rank={rankOf(type)} />
+            <TierCard title={`Double super effective ${cap(type)}`} mult="2.56×" tier={weak[2]} rank={rankOf(type)} />
           </div>
         </>
       )}
@@ -116,7 +134,7 @@ export function MovesetSection({
   slug: string
   name: string
   data: MovesetData
-  ranked: string[] // the types this Pokémon has a ranking for
+  ranked: TypeRank[] // the types this Pokémon has a ranking for
   openNonce: number
   preset?: string
 }) {

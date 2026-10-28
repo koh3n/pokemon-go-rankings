@@ -20,6 +20,7 @@ export interface Ranking {
   mode: string
   tier: string
   rank: number | null
+  off_type?: boolean // from GO Hub's per-type list, not a tile on the Pokémon's own page
 }
 
 export interface SnapshotPokemon {

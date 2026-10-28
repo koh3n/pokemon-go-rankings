@@ -50,7 +50,10 @@ python src/refresh_iv_data.py     # PvPoke base stats -> data/cache/iv_data.json
 python src/refresh_movesets.py    # GO Hub movesets -> data/movesets.json (~2 min)
 ```
 
-`refresh_data.py` keeps the old file if the new scrape looks incomplete. Options:
+`refresh_data.py` also reads GO Hub's 18 per-type lists and adds the *off-type* attackers that are in the top 50
+of a list (a Pokémon's own page only has tiles for its own types, but the lists also include any Pokémon with a move
+of that type: Mega Mewtwo Y is #2 in Ghost). They're marked `off_type` in the data, and `--lists-only` re-reads just
+those lists. It keeps the old file if the new scrape looks incomplete. Options:
 `--workers N` (parallel downloads, default 8), `--delay SECONDS`, `--snapshot FILE`.
 Run `refresh_iv_data.py` when new Pokémon are added to the game. Both files are
 committed, and `npm run dev` / `npm run build` copy them into the site. A nightly

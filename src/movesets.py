@@ -59,3 +59,24 @@ def parse_moveset_props(html):
     for r in results:
         r["qm"], r["cm"] = resolve(r["qm"]), resolve(r["cm"])
     return {"pokemon": pokemon, "moves": moves, "results": results}
+
+
+def parse_type_list(html):
+    """The rows of a /pokemon-list/best-per-type/<type> page: [{"rank", "tier", "slug", "name"}].
+
+    The whole list (every page of it) is embedded in the HTML. A row's attacker has the Pokédex number
+    ("id") and a form like "Mega Y" or "Alola Shadow", which map to page slugs like "150-Mega_Y".
+    Returns None if the page has no list.
+    """
+    blob = _payload(html)
+    try:
+        start = blob.index('"attackers":[') + len('"attackers":')
+        rows, _ = json.JSONDecoder().raw_decode(blob[start:])
+    except (ValueError, json.JSONDecodeError):
+        return None
+    out = []
+    for r in rows:
+        a = r["attacker"]
+        slug = f'{a["id"]}-{a["form"].replace(" ", "_")}' if a.get("form") else str(a["id"])
+        out.append({"rank": int(r["order"]), "tier": r["tier"], "slug": slug, "name": a["name"]})
+    return out

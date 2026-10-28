@@ -27,9 +27,14 @@ def main():
     ap.add_argument("--workers", type=int, default=8, help="parallel downloads (default 8)")
     ap.add_argument("--delay", type=float, default=0.0,
                     help="seconds between request starts (default 0)")
+    ap.add_argument("--lists-only", action="store_true",
+                    help="only re-read GO Hub's 18 per-type lists (off-type rankings); keeps the rest of the file")
     args = ap.parse_args()
 
-    ok, msg = pt.refresh_snapshot(args.snapshot, args.cache_dir, args.workers, args.delay)
+    if args.lists_only:
+        ok, msg = pt.refresh_lists(args.snapshot, args.cache_dir, args.delay or 0.2)
+    else:
+        ok, msg = pt.refresh_snapshot(args.snapshot, args.cache_dir, args.workers, args.delay)
     print(("Done: " if ok else "Not updated: ") + msg)
     sys.exit(0 if ok else 1)
 

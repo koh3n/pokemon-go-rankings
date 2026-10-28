@@ -104,6 +104,7 @@ input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid va
 .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .tier-card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
 .tier-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.tier-mult .badge{font-size:11px;padding:0 6px;margin-right:4px}
 .tier-mult{font-variant-numeric:tabular-nums;font-size:12px;color:var(--accent);font-weight:700}
 .tier-moves{font-weight:600}
 .tier-edps{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}

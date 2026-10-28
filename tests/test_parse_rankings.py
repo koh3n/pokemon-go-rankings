@@ -67,11 +67,12 @@ class RefreshSafeguard(unittest.TestCase):
             {"slug": str(i), "rankings": [{"mode": "m", "tier": "A", "rank": 1}] * rankings_per_page}
             for i in range(pages)]}
 
-    def refresh(self, old, new):
+    def refresh(self, old, new, lists_failed=None):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "all_rankings.json"
             path.write_text(json.dumps(old))
-            with mock.patch.object(pt, "build_all", return_value=new):
+            with mock.patch.object(pt, "build_all", return_value=new), \
+                    mock.patch.object(pt, "add_off_type_rankings", return_value=(0, lists_failed or [])):
                 ok, msg = pt.refresh_snapshot(path, d)
             return ok, msg, json.loads(path.read_text())
 
@@ -80,6 +81,13 @@ class RefreshSafeguard(unittest.TestCase):
         ok, msg, saved = self.refresh(old, self.snapshot(0))   # right page count, nothing parsed
         self.assertFalse(ok)
         self.assertIn("rankings", msg)
+        self.assertEqual(saved, old)
+
+    def test_keeps_old_data_when_a_type_list_cannot_be_read(self):
+        old = self.snapshot(3)
+        ok, msg, saved = self.refresh(old, self.snapshot(3), lists_failed=["ghost"])
+        self.assertFalse(ok)
+        self.assertIn("ghost", msg)
         self.assertEqual(saved, old)
 
     def test_saves_a_good_scrape(self):
