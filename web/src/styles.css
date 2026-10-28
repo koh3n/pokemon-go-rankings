@@ -109,7 +109,6 @@ input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid va
 .tier-edps{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .tier-close{margin:6px 0 0}
 @media (max-width:700px){.tiers{grid-template-columns:1fr}}
-.sub-h{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .tiers.one{grid-template-columns:minmax(0,1fr)}
 .tiers.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (max-width:700px){.tiers.two{grid-template-columns:1fr}}
@@ -118,8 +117,7 @@ input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid va
 .pager button:disabled{opacity:.45;cursor:default}
 .pager span{text-align:center;font-variant-numeric:tabular-nums}
 details.ivsec>summary .spr{width:32px;height:32px;margin-right:8px}
-/* the type badge is a 200x40 pill whose icon is centred at x=29.5: crop a square around it (5.94% = (29.5-20)/(200-40)) */
-.tico{width:20px;height:20px;object-fit:cover;object-position:5.94% center;border-radius:50%;display:block;flex:none}
+.tico{width:20px;height:20px;display:block;flex:none}
 .tier-close .tico{width:16px;height:16px}
 /* icon + name: centre the icon on the text's line instead of nudging it off the baseline */
 .mv{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
@@ -127,3 +125,5 @@ details.ivsec>summary .spr{width:32px;height:32px;margin-right:8px}
 .tab-type{display:inline-flex;align-items:center;gap:6px}
 .tier-moves{display:flex;align-items:center;flex-wrap:wrap}
 .tier-close{display:flex;align-items:center;flex-wrap:wrap;gap:0 4px}
+.ivbody .tiers.one{margin-bottom:12px}
+.ivbody .tiers.one + .hint{margin-top:0}

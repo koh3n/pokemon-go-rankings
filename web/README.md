@@ -36,3 +36,7 @@ first; see the top of `scripts/gen_fixtures.py`.
 - `src/lib/search.ts` – the search box: name resolution, IV ranks on ranking rows
 - `src/lib/movesets.ts` – best raid moveset per boss-weakness tier (port of `src/moveset_model.py`)
 - `src/components/`, `src/App.tsx` – the UI
+
+## Credits
+
+Type icons in `public/types/` are from [partywhale/pokemon-type-icons](https://github.com/partywhale/pokemon-type-icons) (MIT, license in `public/types/LICENSE.txt`). Pokémon sprites are loaded from the PokeAPI sprites repo.

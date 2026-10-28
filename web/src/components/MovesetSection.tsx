@@ -76,12 +76,10 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
         <input type="checkbox" checked={hideLegacy} onChange={(e) => setHideLegacy(e.target.checked)} /> Hide legacy moves (no Elite TM)
       </label>
 
-      <h4 className="sub-h">Neutral boss</h4>
       <div className="tiers one">
         <TierCard title="Normal damage from every type" mult="1×" tier={neutral} />
       </div>
 
-      <h4 className="sub-h">If the boss is weak to…</h4>
       {types.length === 0 ? (
         <p className="hint" style={{ margin: 0 }}>
           GO Hub doesn't rank this Pokémon in any type list, so there's no weakness view for it.
