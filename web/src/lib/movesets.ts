@@ -165,3 +165,47 @@ const SUPER_EFFECTIVE: Record<string, string[]> = {
 }
 
 export const superEffectiveAgainst = (type: string): string[] => SUPER_EFFECTIVE[type] ?? []
+
+/** One row of a type's ranking list: how GO Hub ranks `slug` among that type's attackers. */
+export interface ListRow {
+  slug: string
+  tier: string
+  rank: number | null
+}
+
+/** eDPS of the Pokémon's best moveset when the boss is weak (1.6x) to `type`. */
+function bestEdps(data: MovesetData, slug: string, type: string, allowLegacy: boolean): number {
+  const e = data.pokemon[slug]
+  if (!e) return 0
+  const moves = movesOf(data, e).filter((m) => allowLegacy || !m.legacy)
+  const mults = { [type]: STEPS[1] }
+  let best = 0
+  for (const f of moves.filter((m) => m.fast))
+    for (const c of moves.filter((m) => !m.fast)) best = Math.max(best, cycleDps(f, c, e.k, mults))
+  return best * e.f
+}
+
+/**
+ * Where `slug` would sit in the `type` list if it couldn't use its legacy moves and everyone else kept theirs.
+ * GO Hub ranks a type's list by eDPS against a boss weak to that type (the calculator reproduces that order
+ * to a rank correlation of ~0.98), so the Pokémon slides down past every attacker whose score now lies between
+ * its old and new one. The tier is that of the attacker now sitting at the new rank.
+ * -> null when the Pokémon isn't in the list; the unchanged ranking when its best moveset has no legacy move.
+ */
+export function rankWithoutLegacy(data: MovesetData, slug: string, type: string, list: ListRow[]): ListRow | null {
+  const me = list.find((r) => r.slug === slug)
+  if (!me || me.rank == null) return null
+  const withLegacy = bestEdps(data, slug, type, true)
+  const without = bestEdps(data, slug, type, false)
+  if (without >= withLegacy - 1e-9) return me
+  let passed = 0
+  for (const r of list)
+    if (r.slug !== slug && r.rank != null) {
+      const s = bestEdps(data, r.slug, type, true)
+      if (s > without && s <= withLegacy) passed++
+    }
+  const rank = me.rank + passed
+  const others = list.filter((r) => r.slug !== slug && r.rank != null).sort((a, b) => a.rank! - b.rank!)
+  const at = others.find((r) => r.rank! >= rank) ?? others[others.length - 1]
+  return { slug, tier: at?.tier ?? me.tier, rank }
+}

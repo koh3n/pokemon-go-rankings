@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { defaultType, hasTierView, moveTypes, neutralView, tierView, type MovesetData } from '../src/lib/movesets'
+import { defaultType, hasTierView, moveTypes, neutralView, rankWithoutLegacy, tierView, type ListRow, type MovesetData } from '../src/lib/movesets'
 
 const root = new URL('../../', import.meta.url)
 const data = JSON.parse(readFileSync(new URL('web/test/data/movesets.json', root), 'utf8')) as MovesetData
@@ -70,5 +70,25 @@ describe('behaviour', () => {
         const n = neutralView(data, slug, legacy)
         for (const t of moveTypes(data, slug)) expect(tierView(data, slug, t, legacy)[0]).toEqual(n)
       }
+  })
+})
+
+describe('ranking without legacy moves', () => {
+  const others = Object.keys(data.pokemon).filter((s) => s !== '150' && moveTypes(data, s).includes('ghost')).slice(0, 40)
+  const list: ListRow[] = [{ slug: '150', tier: 'S', rank: 1 }, ...others.map((s, i) => ({ slug: s, tier: i < 20 ? 'A' : 'B', rank: i + 2 }))]
+
+  it('moves a Pokémon down the list when its best moveset needs a legacy move', () => {
+    const r = rankWithoutLegacy(data, '150', 'ghost', list)!
+    expect(r.rank).toBeGreaterThan(1)
+    expect(r.tier).not.toBe('S')
+  })
+  it('leaves the ranking alone when the Pokémon is not in the list', () => {
+    expect(rankWithoutLegacy(data, '150', 'ghost', list.slice(1))).toBeNull()
+  })
+  it('never moves a Pokémon up', () => {
+    for (const s of others.slice(0, 10)) {
+      const r = rankWithoutLegacy(data, s, 'ghost', list)!
+      expect(r.rank).toBeGreaterThanOrEqual(list.find((x) => x.slug === s)!.rank!)
+    }
   })
 })

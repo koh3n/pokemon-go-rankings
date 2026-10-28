@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Sprite } from './Sprite'
 import { TypeIcon } from './TypeIcon'
-import { MAX_FIT_ERROR, defaultType, hasTierView, moveTypes, neutralView, superEffectiveAgainst, tierView, type MovesetData, type Pick, type TierResult } from '../lib/movesets'
+import { MAX_FIT_ERROR, defaultType, hasTierView, moveTypes, neutralView, rankWithoutLegacy, superEffectiveAgainst, tierView, type ListRow, type MovesetData, type Pick, type TierResult } from '../lib/movesets'
 
 export interface TypeRank {
   type: string
@@ -94,14 +94,19 @@ function TierCard({ title, mult, tier, rank, type }: { title: string; mult: stri
   )
 }
 
-function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string; ranked: TypeRank[]; preset?: string }) {
+function Tiers({ data, slug, ranked, lists, preset }: { data: MovesetData; slug: string; ranked: TypeRank[]; lists: Map<string, ListRow[]>; preset?: string }) {
   // only the types GO Hub ranks this Pokémon for (and that it has a move of)
   const types = useMemo(() => moveTypes(data, slug).filter((t) => ranked.some((r) => r.type === t)), [data, slug, ranked])
   const [picked, setPicked] = useState<string | null>(null) // the user's own choice, if any
   const type = picked ?? (preset && types.includes(preset) ? preset : defaultType(data, slug, types))
-  const rankOf = (t: string) => ranked.find((r) => r.type === t)
   const [hideLegacy, setHideLegacy] = useState(false)
   const neutral = useMemo(() => neutralView(data, slug, !hideLegacy), [data, slug, hideLegacy])
+  // without its legacy moves the Pokémon drops down the type's list
+  const rank = useMemo<TypeRank | undefined>(() => {
+    const base = ranked.find((r) => r.type === type)
+    const row = hideLegacy && type ? rankWithoutLegacy(data, slug, type, lists.get(type) ?? []) : null
+    return row ? { type, tier: row.tier, rank: row.rank } : base
+  }, [data, slug, type, ranked, lists, hideLegacy])
   const weak = useMemo(() => (type ? tierView(data, slug, type, !hideLegacy) : []), [data, slug, type, hideLegacy])
 
   return (
@@ -129,7 +134,7 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
             ))}
           </div>
           <div className="tiers one">
-            <TierCard title={`Super effective ${cap(type)}`} mult="1.6×" tier={weak[1]} rank={rankOf(type)} type={type} />
+            <TierCard title={`Super effective ${cap(type)}`} mult="1.6×" tier={weak[1]} rank={rank} type={type} />
           </div>
         </>
       )}
@@ -143,6 +148,7 @@ export function MovesetSection({
   name,
   data,
   ranked,
+  lists,
   openNonce,
   preset,
 }: {
@@ -150,6 +156,7 @@ export function MovesetSection({
   name: string
   data: MovesetData
   ranked: TypeRank[] // the types this Pokémon has a ranking for
+  lists: Map<string, ListRow[]> // every Pokémon's ranking in each type's list
   openNonce: number
   preset?: string
 }) {
@@ -181,7 +188,7 @@ export function MovesetSection({
               before it can use a charged move), so there's no moveset view for it.
             </p>
           ) : (
-            <Tiers key={preset ?? 'default'} data={data} slug={slug} ranked={ranked} preset={preset} />
+            <Tiers key={preset ?? 'default'} data={data} slug={slug} ranked={ranked} lists={lists} preset={preset} />
           ))}
       </div>
     </details>

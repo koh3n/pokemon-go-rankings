@@ -9,6 +9,7 @@ import { DEFAULT_CAP, IvRanker, LEVEL_CAPS, type IvData } from './lib/ivrank'
 import type { MovesetData } from './lib/movesets'
 import { parseIvs, runSearch, type SearchResult } from './lib/search'
 import { FORM_GROUPS, type EvoNode, type Snapshot } from './lib/tiers'
+import type { ListRow } from './lib/movesets'
 
 const LABELS: Record<string, string> = {
   normal: 'Normal',
@@ -158,6 +159,17 @@ export default function App() {
     }
     return m
   }, [data])
+  const typeLists = useMemo(() => {
+    const m = new Map<string, ListRow[]>()
+    for (const p of data?.snap.per_pokemon ?? [])
+      for (const r of p.rankings) {
+        const type = /^(\w+)-type$/i.exec(r.mode)?.[1].toLowerCase()
+        if (!type) continue
+        const rows = m.get(type) ?? m.set(type, []).get(type)!
+        if (!rows.some((x) => x.slug === p.slug)) rows.push({ slug: p.slug, tier: r.tier, rank: r.rank })
+      }
+    return m
+  }, [data])
   const hasMoves = useCallback((slug: string) => !!data?.movesets?.pokemon[slug], [data])
 
   const names = useMemo(() => (data ? [...new Set(data.ranker.mons.map((m) => m.name))].sort() : []), [data])
@@ -295,6 +307,7 @@ export default function App() {
                       name={m.name}
                       data={data.movesets!}
                       ranked={rankedTypes.get(m.slug) ?? []}
+                      lists={typeLists}
                       openNonce={moveReq.slug === m.slug ? moveReq.nonce : 0}
                       preset={moveReq.slug === m.slug ? moveReq.type : undefined}
                     />
