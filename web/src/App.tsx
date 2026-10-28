@@ -283,10 +283,9 @@ export default function App() {
 
             {data?.movesets && (
               <div className="card" id="movesets-card">
-                <h2>Raid movesets by boss weakness</h2>
+                <h2>Best movesets (PvE)</h2>
                 <p className="hint" style={{ margin: '0 0 6px' }}>
-                  The best fast and charged move for each Pokémon against a neutral boss, and when the boss is weak or double weak
-                  to one of the types it's ranked for. Expand one to choose the type.
+                  The best moveset for each Pokémon in PvE.
                 </p>
                 <div>
                   {moveSections.map((m) => (

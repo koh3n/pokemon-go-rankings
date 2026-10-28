@@ -128,9 +128,8 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
               </button>
             ))}
           </div>
-          <div className="tiers two">
+          <div className="tiers one">
             <TierCard title={`Super effective ${cap(type)}`} mult="1.6×" tier={weak[1]} rank={rankOf(type)} type={type} />
-            <TierCard title={`Double super effective ${cap(type)}`} mult="2.56×" tier={weak[2]} rank={rankOf(type)} type={type} />
           </div>
         </>
       )}

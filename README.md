@@ -30,10 +30,11 @@ Type a Pokémon name or Pokédex number and pick which forms to include.
   product for every stage of the line, plus a "Your IV rank" column on the league
   rows of the tier table. Shadow Pokémon use the normal form's rank.
 - **Evolution tree**: the full line, with each stage's forms.
-- **Raid movesets by boss weakness**: a collapsible per Pokémon showing its best fast + charged move
-  against a neutral boss (1×, the same whatever the type), and when the boss is weak to a type (1.6×) or
-  double weak to it (2.56×), with a picker for the types it is ranked for and a "hide legacy moves"
-  toggle. A "Movesets" link on every ranking row opens it (on a "Fire-type" row it preselects Fire).
+- **Best movesets (PvE)**: a collapsible per Pokémon showing its best fast + charged move against a
+  neutral boss (1×, the same whatever the type) and when the boss is weak to a type (1.6×), with the tier
+  and rank for that type, what the type is super effective against, a picker for the types it is ranked
+  for and a "hide legacy moves" toggle. A "Movesets" link on every ranking row opens it (on a "Fire-type"
+  row it preselects Fire).
   See "Raid movesets" below.
 - **IV spreads**: a collapsible per Pokémon under the tree listing all 4096 spreads
   for each league (rank, level, CP, stat product %, in-battle stats), with a
