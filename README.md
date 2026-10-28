@@ -30,6 +30,10 @@ Type a Pokémon name or Pokédex number and pick which forms to include.
   product for every stage of the line, plus a "Your IV rank" column on the league
   rows of the tier table. Shadow Pokémon use the normal form's rank.
 - **Evolution tree**: the full line, with each stage's forms.
+- **Raid movesets by boss weakness**: a collapsible per Pokémon showing its best fast + charged
+  move when the boss takes normal damage (1×), is weak to a type (1.6×) or double weak to it (2.56×),
+  with a type picker and a "hide legacy moves" toggle. A "Movesets" link on every ranking row opens it
+  (on a "Fire-type" row it preselects Fire). See "Raid movesets" below.
 - **IV spreads**: a collapsible per Pokémon under the tree listing all 4096 spreads
   for each league (rank, level, CP, stat product %, in-battle stats), with a
   level-cap picker and an IV finder (`0/15/15`, `*/14/*`).
@@ -42,6 +46,7 @@ results can be linked.
 ```
 python src/refresh_data.py        # GO Hub rankings -> data/all_rankings.json (~3 min)
 python src/refresh_iv_data.py     # PvPoke base stats -> data/cache/iv_data.json
+python src/refresh_movesets.py    # GO Hub movesets -> data/movesets.json (~2 min)
 ```
 
 `refresh_data.py` keeps the old file if the new scrape looks incomplete. Options:
@@ -70,8 +75,11 @@ is the lower-level version of `refresh_data.py` and also takes `--keep-html`.)
 | `src/pogo_tiers.py` | Scraper and parser (single line or `--all`) |
 | `src/refresh_data.py` | Updates `data/all_rankings.json` |
 | `src/refresh_iv_data.py` | Updates `data/cache/iv_data.json` from PvPoke |
+| `src/refresh_movesets.py`, `movesets.py`, `moveset_model.py` | Scrape each Pokémon page's moves and build `data/movesets.json` |
+| `src/validate_model.py`, `validate_bosses.py` | Check the moveset calculator against GO Hub's numbers |
 | `data/all_rankings.json` | Output of `refresh_data.py`; what the site reads |
 | `data/cache/iv_data.json` | Base stats and CP multipliers (committed) |
+| `data/movesets.json` | Moves and per-Pokémon calculator settings for the raid moveset view (committed) |
 | `.github/workflows/` | Nightly data refresh and the GitHub Pages deploy |
 
 ## Hosting
@@ -79,6 +87,33 @@ is the lower-level version of `refresh_data.py` and also takes `--keep-html`.)
 The site is published with GitHub Pages by `.github/workflows/deploy-site.yml`: it builds `web/` and
 deploys it whenever `main` changes and after each nightly data refresh. One-time setup: repo
 Settings → Pages → Source: GitHub Actions. The published site is public even though the repository is private.
+
+## Raid movesets
+
+GO Hub ranks raid attackers per type using each Pokémon's best moveset for that type, averaged over the
+bosses weak to it, so the moveset it shows can differ from the best one against the boss you're facing
+(for example Shadow Alolan Golem's Electric moveset uses Rock moves, which beat Electric ones against Flying
+bosses but not against Water ones). The raid movesets card answers "what if the boss is weak to type X?"
+directly: it re-ranks every fast + charged combination with that type hitting at 1×, 1.6× or 2.56× and every
+other type at 1×.
+
+How it works: each GO Hub Pokémon page embeds the Pokémon's types and stats, its moves, and GO Hub's own
+neutral-boss ranking of every moveset. `src/moveset_model.py` fits a small calculator (damage per hit, the
+fast/charged energy cycle, a per-Pokémon scale) to that ranking, and the web app (`web/src/lib/movesets.ts`)
+runs the same calculator in the browser. The data (`data/movesets.json`) is 240 KB.
+
+How accurate it is, from `src/validate_model.py` and `src/validate_bosses.py`:
+
+- against GO Hub's neutral numbers for all 1,954 Pokémon (19,299 movesets): median DPS error 1.0%; its #1
+  moveset is GO Hub's #1 for 88% of Pokémon, and when it isn't, the pick is on average 0.3% lower in GO Hub's DPS
+- against 25 tables of GO Hub's results vs specific bosses (Water, Water/Flying, Fire/Flying, Psychic, Ground):
+  the ratios between movesets are within 1.9% on average, and its best moveset is within 3% of GO Hub's best in all 25
+- 58 Pokémon (such as Abra) fit worse than 8% because GO Hub scores them as never reaching a charged move; the
+  card says so instead of showing a view for them
+
+Limits: only the chosen type is boosted, so a boss where another of the Pokémon's types is also super effective
+isn't captured; damage is continuous, while the game rounds each hit to whole numbers (small bonuses can vanish
+against bulky bosses); eDPS is on GO Hub's neutral-boss scale (Level 40, 15/15/15, default settings).
 
 ## Output JSON
 

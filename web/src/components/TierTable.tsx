@@ -11,12 +11,16 @@ export function TierTable({
   mode,
   onMode,
   onIv,
+  onMoves,
+  hasMoves,
 }: {
   result: SearchResult
   group: string
   mode: string
   onMode: (m: string) => void
   onIv: (name: string) => void
+  onMoves?: (slug: string, name: string, type?: string) => void
+  hasMoves?: (slug: string) => boolean
 }) {
   const all = useMemo(() => result.rankings[group] ?? [], [result, group])
   const modes = useMemo(() => [...new Set(all.map((r) => r.mode))], [all])
@@ -69,7 +73,13 @@ export function TierTable({
                       {r.pokemon}
                     </a>
                   </span>
-                  <ExtraLinks slug={r.slug} name={r.pokemon} mode={r.mode} onIv={onIv} />
+                  <ExtraLinks
+                    slug={r.slug}
+                    name={r.pokemon}
+                    mode={r.mode}
+                    onIv={onIv}
+                    onMoves={onMoves && hasMoves?.(r.slug) ? () => onMoves(r.slug, r.pokemon, /^(\w+)-type$/i.exec(r.mode)?.[1].toLowerCase()) : undefined}
+                  />
                 </td>
                 <td>{r.mode}</td>
                 <td>
