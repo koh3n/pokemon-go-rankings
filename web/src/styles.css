@@ -118,6 +118,6 @@ input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid va
 .pager button:disabled{opacity:.45;cursor:default}
 .pager span{text-align:center;font-variant-numeric:tabular-nums}
 details.ivsec>summary .spr{width:32px;height:32px;margin-right:8px}
-/* the type badge is a 200x40 pill; show only its icon end */
-.tico{width:20px;height:20px;object-fit:cover;object-position:left center;border-radius:50%;vertical-align:-5px;margin-right:5px;flex:none}
+/* the type badge is a 200x40 pill whose icon is centred at x=29.5: crop a square around it (5.94% = (29.5-20)/(200-40)) */
+.tico{width:20px;height:20px;object-fit:cover;object-position:5.94% center;border-radius:50%;vertical-align:-5px;margin-right:5px;flex:none}
 .tier-close .tico{width:16px;height:16px;vertical-align:-4px}
