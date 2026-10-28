@@ -108,6 +108,10 @@ input.flt{flex:none;width:190px;min-width:0;padding:8px 10px;border:1px solid va
 .tier-mult{font-variant-numeric:tabular-nums;font-size:12px;color:var(--accent);font-weight:700}
 .tier-moves{font-weight:600}
 .tier-edps{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.se{display:flex;flex-wrap:wrap;align-items:center;gap:4px 4px;margin-top:8px;font-size:12px;color:var(--muted)}
+.se>span:first-child{margin-right:2px}
+.se-chip{display:inline-flex;align-items:center;gap:4px;margin:0;font-size:12px}
+.se-chip .tico{width:14px;height:14px}
 .tier-close{margin:6px 0 0}
 @media (max-width:700px){.tiers{grid-template-columns:1fr}}
 .tiers.one{grid-template-columns:minmax(0,1fr)}

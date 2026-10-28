@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Sprite } from './Sprite'
 import { TypeIcon } from './TypeIcon'
-import { MAX_FIT_ERROR, defaultType, hasTierView, moveTypes, neutralView, tierView, type MovesetData, type Pick, type TierResult } from '../lib/movesets'
+import { MAX_FIT_ERROR, defaultType, hasTierView, moveTypes, neutralView, superEffectiveAgainst, tierView, type MovesetData, type Pick, type TierResult } from '../lib/movesets'
 
 export interface TypeRank {
   type: string
@@ -48,8 +48,9 @@ function Badge({ r }: { r: TypeRank | undefined }) {
   ) : null
 }
 
-function TierCard({ title, mult, tier, rank }: { title: string; mult: string; tier: TierResult | undefined; rank?: TypeRank }) {
+function TierCard({ title, mult, tier, rank, type }: { title: string; mult: string; tier: TierResult | undefined; rank?: TypeRank; type?: string }) {
   const [best, second] = tier?.picks ?? []
+  const against = type ? superEffectiveAgainst(type) : undefined
   const close = second && best && second.edps >= best.edps * 0.97
   return (
     <div className="tier-card">
@@ -68,6 +69,21 @@ function TierCard({ title, mult, tier, rank }: { title: string; mult: string; ti
           {close && (
             <div className="hint tier-close">
               Close call: <Moves p={second} /> ({second.edps.toFixed(1)})
+            </div>
+          )}
+          {against && (
+            <div className="se">
+              <span>Super effective against</span>
+              {against.length ? (
+                against.map((t) => (
+                  <span key={t} className="chip se-chip" title={cap(t)}>
+                    <TypeIcon type={t} />
+                    {cap(t)}
+                  </span>
+                ))
+              ) : (
+                <span className="chip se-chip">nothing</span>
+              )}
             </div>
           )}
         </>
@@ -113,8 +129,8 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
             ))}
           </div>
           <div className="tiers two">
-            <TierCard title={`Super effective ${cap(type)}`} mult="1.6×" tier={weak[1]} rank={rankOf(type)} />
-            <TierCard title={`Double super effective ${cap(type)}`} mult="2.56×" tier={weak[2]} rank={rankOf(type)} />
+            <TierCard title={`Super effective ${cap(type)}`} mult="1.6×" tier={weak[1]} rank={rankOf(type)} type={type} />
+            <TierCard title={`Double super effective ${cap(type)}`} mult="2.56×" tier={weak[2]} rank={rankOf(type)} type={type} />
           </div>
         </>
       )}
