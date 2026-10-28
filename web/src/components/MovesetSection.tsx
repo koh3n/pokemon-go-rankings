@@ -87,11 +87,6 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
           </div>
         </>
       )}
-      <p className="hint" style={{ margin: '10px 0 0' }}>
-        {types.length > 0 &&
-          `How this reads: in the weakness view only ${cap(type)} moves get the boost; this Pokémon's other move types are treated as neutral. Against a boss where another of its types is also super effective (Rock against Flying, say) a different moveset can win. `}
-        eDPS is on GO Hub's neutral-boss scale and estimated by a calculator that matches GO Hub's own numbers to about 1% (median) per moveset.
-      </p>
     </>
   )
 }
