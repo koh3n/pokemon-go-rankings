@@ -14,11 +14,21 @@ function Moves({ p }: { p: Pick }) {
     ) : null
   return (
     <>
-      <TypeIcon type={p.fastType} />
-      {p.fast}
-      {star(p.fastLegacy)} / <TypeIcon type={p.chargedType} />
-      {p.charged}
-      {star(p.chargedLegacy)}
+      <span className="mv">
+        <TypeIcon type={p.fastType} />
+        <span>
+          {p.fast}
+          {star(p.fastLegacy)}
+        </span>
+      </span>
+      <span className="mv-sep">/</span>
+      <span className="mv">
+        <TypeIcon type={p.chargedType} />
+        <span>
+          {p.charged}
+          {star(p.chargedLegacy)}
+        </span>
+      </span>
     </>
   )
 }
@@ -80,7 +90,7 @@ function Tiers({ data, slug, ranked, preset }: { data: MovesetData; slug: string
         <>
           <div className="tabs" role="tablist" aria-label="Type the boss is weak to">
             {types.map((t) => (
-              <button key={t} type="button" className="tab" role="tab" aria-selected={t === type} onClick={() => setPicked(t)}>
+              <button key={t} type="button" className="tab tab-type" role="tab" aria-selected={t === type} onClick={() => setPicked(t)}>
                 <TypeIcon type={t} />
                 {cap(t)}
               </button>
