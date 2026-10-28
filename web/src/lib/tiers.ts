@@ -2,7 +2,7 @@
 // and assemble() in src/pogo_tiers.py; the scraper itself stays in Python.
 
 export const BASE = 'https://db.pokemongohub.net'
-export const TIER_ORDER = ['S+', 'S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E', 'F']
+export const TIER_ORDER = ['SS', 'S+', 'S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'E', 'F']
 const TIER_INDEX = new Map(TIER_ORDER.map((t, i) => [t, i]))
 const REGIONAL_TAGS = new Set(['alola', 'alolan', 'galar', 'galarian', 'hisui', 'hisuian', 'paldea', 'paldean'])
 export const FORM_GROUPS = [

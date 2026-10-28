@@ -39,6 +39,19 @@ class ParseRankings(unittest.TestCase):
         self.assertEqual(parse(html), ([{"mode": "Great League", "tier": "A", "rank": 259},
                                         {"mode": "Fire-type", "tier": "B+", "rank": 12}], ["Raid Attacker"]))
 
+    def test_two_letter_ss_tier(self):
+        # GO Hub added an SS tier above S; it used to be mistaken for a mode name and the ranking was lost
+        html = ('<h3>X Tier Ranking</h3><div class="PokemonPageRenderers_tierRankingsContainer_x">'
+                '<div><span>Raid Attacker</span><div>SS</div><div>#</div><div>2</div></div>'
+                '<div><span>Psychic-type</span><div>SS</div><div>#</div><div>1</div></div>'
+                '<div><span>Fire-type</span><div>S+</div><div>#</div><div>5</div></div></div>')
+        self.assertEqual(parse(html)[0], [{"mode": "Raid Attacker", "tier": "SS", "rank": 2},
+                                          {"mode": "Psychic-type", "tier": "SS", "rank": 1},
+                                          {"mode": "Fire-type", "tier": "S+", "rank": 5}])
+
+    def test_ss_sorts_above_s(self):
+        self.assertLess(pt.TIER_INDEX["SS"], pt.TIER_INDEX["S+"])
+
     def test_tier_without_a_rank(self):
         html = '<h3>X Tier Ranking</h3><div>Fire-type</div><div>C</div><div>Ice-type</div><div>D</div>'
         self.assertEqual(parse(html)[0], [{"mode": "Fire-type", "tier": "C", "rank": None},

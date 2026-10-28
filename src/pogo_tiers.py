@@ -54,13 +54,13 @@ WORKERS = 32         # max pages downloaded at the same time (a whole line fits 
 DEFAULT_DELAY = 0.0  # no pause between requests; use --delay 0.5 etc. to slow down
 
 # Best -> worst. Anything not listed sorts after F (and is reported).
-TIER_ORDER = ["S+", "S", "A+", "A", "A-", "B+", "B", "B-",
+TIER_ORDER = ["SS", "S+", "S", "A+", "A", "A-", "B+", "B", "B-",
               "C+", "C", "C-", "D+", "D", "D-", "E", "F"]
 TIER_INDEX = {t: i for i, t in enumerate(TIER_ORDER)}
 
 # "A", "A+", "A Tier", "A Tier #259" (the site now writes the tier, "#" and the number as
 # separate pieces of text; older pages wrote "A Tier" and "#259")
-TIER_RE = re.compile(r"^([A-Z][+\-]?)(?:\s*Tier)?\s*(?:#\s*(\d+))?$")
+TIER_RE = re.compile(r"^([A-Z]{1,2}[+\-]?)(?:\s*Tier)?\s*(?:#\s*(\d+))?$")
 RANK_RE = re.compile(r"^#\s*(\d+)$")
 HEADING_RE = re.compile(r"^h[1-6]$")
 FAMILY_TITLE_RE = re.compile(
