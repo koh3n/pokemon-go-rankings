@@ -82,7 +82,7 @@ class PageName(unittest.TestCase):
 class RefreshSafeguard(unittest.TestCase):
     def snapshot(self, rankings_per_page, pages=100):
         return {"pages_scraped": pages, "pages_failed": {}, "per_pokemon": [
-            {"slug": str(i), "rankings": [{"mode": "m", "tier": "A", "rank": 1}] * rankings_per_page}
+            {"slug": str(i), "name": f"Mon{i}", "rankings": [{"mode": "m", "tier": "A", "rank": 1}] * rankings_per_page}
             for i in range(pages)]}
 
     def refresh(self, old, new, lists_failed=None):
@@ -107,6 +107,22 @@ class RefreshSafeguard(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn("ghost", msg)
         self.assertEqual(saved, old)
+
+    def test_keeps_old_data_when_names_are_missing(self):
+        # the scrape that saved 541 Pokémon as "Pokémon"
+        old, new = self.snapshot(3), self.snapshot(3)
+        for p in new["per_pokemon"][:30]:
+            p["name"] = "Pokémon"
+        ok, msg, saved = self.refresh(old, new)
+        self.assertFalse(ok)
+        self.assertIn("no name", msg)
+        self.assertEqual(saved, old)
+
+    def test_a_few_unnamed_pokemon_are_tolerated(self):
+        new = self.snapshot(3)
+        new["per_pokemon"][0]["name"] = new["per_pokemon"][0]["slug"]    # 1 of 100
+        ok, _, _ = self.refresh(self.snapshot(3), new)
+        self.assertTrue(ok)
 
     def test_saves_a_good_scrape(self):
         new = self.snapshot(3)

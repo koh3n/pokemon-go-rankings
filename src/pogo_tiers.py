@@ -642,13 +642,20 @@ def refresh_lists(path, cache_dir, delay=0.2):
     return True, f"{added} off-type rankings (top {OFF_TYPE_TOP} of a list)"
 
 
+def unnamed(snap):
+    """Slugs saved without a real name: empty, the slug itself, or the site's generic "Pokémon" heading."""
+    return [p["slug"] for p in snap["per_pokemon"]
+            if not p.get("name") or p["name"] == p["slug"] or norm(p["name"]) == "pokemon"]
+
+
 def refresh_snapshot(path, cache_dir, workers=4, delay=0.2):
     """Re-scrape the whole site and replace the snapshot file atomically.
 
     Returns (ok, message). The old file is kept if the new scrape looks
     incomplete (fewer than 90% of the old page count, >5% of pages failed, or
-    fewer than 90% of the old number of rankings, which is what a change in the
-    site's markup looks like), so a bad night never wipes the data.
+    fewer than 90% of the old number of rankings, or more than 1% of the Pokémon
+    without a name, which is what a change in the site's markup looks like), so a
+    bad night never wipes the data.
     """
     path = Path(path)
     old = load_snapshot(path)
@@ -666,6 +673,10 @@ def refresh_snapshot(path, cache_dir, workers=4, delay=0.2):
     if new_r < 0.9 * old_r:
         return False, (f"kept old data: new scrape found {new_r} rankings, old had {old_r}; "
                        "the site's markup may have changed (see parse_rankings in pogo_tiers.py)")
+    nameless = unnamed(new)
+    if len(nameless) > 0.01 * len(new["per_pokemon"]):
+        return False, (f"kept old data: {len(nameless)} of {len(new['per_pokemon'])} Pokémon have no name "
+                       f"(e.g. {', '.join(nameless[:5])}); the site's markup may have changed (see page_name in pogo_tiers.py)")
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(new, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     os.replace(tmp, path)
