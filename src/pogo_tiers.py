@@ -353,10 +353,21 @@ def parse_family(soup):
     return out
 
 
+def page_name(soup):
+    """The Pokemon's name. GO Hub puts a site-wide <h1>Pokémon</h1> before the page's own, so skip
+    that one; the <title> ("Fuecoco: Best Moveset, ...") is the fallback."""
+    for h1 in soup.find_all("h1"):
+        text = h1.get_text(" ", strip=True)
+        if text and norm(text) != "pokemon":
+            return text
+    if soup.title and soup.title.string and ":" in soup.title.string:
+        return soup.title.string.split(":")[0].strip() or None
+    return None
+
+
 def parse_page(html):
     soup = BeautifulSoup(html, "html.parser")
-    h1 = soup.find("h1")
-    name = h1.get_text(" ", strip=True) if h1 else None
+    name = page_name(soup)
     rankings, unranked = parse_rankings(soup)
     return {"name": name, "rankings": rankings, "unranked": unranked,
             "edges": parse_edges(soup), "family": parse_family(soup)}

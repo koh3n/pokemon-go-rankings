@@ -61,6 +61,24 @@ class ParseRankings(unittest.TestCase):
         self.assertEqual(parse("<h3>Something else</h3>"), (None, None))
 
 
+class PageName(unittest.TestCase):
+    def name(self, html):
+        return pt.parse_page(html)["name"]
+
+    def test_skips_the_site_wide_heading(self):
+        # GO Hub put an <h1>Pokémon</h1> in front of every page's own heading
+        self.assertEqual(self.name("<h1>Pokémon</h1><h1>Fuecoco</h1><h1>List of Fuecoco costumes</h1>"), "Fuecoco")
+
+    def test_plain_heading(self):
+        self.assertEqual(self.name("<h1>Crocalor</h1>"), "Crocalor")
+
+    def test_falls_back_to_the_title(self):
+        self.assertEqual(self.name("<title>Rowlet: Best Moveset, Counters &amp; Max CP | Pokémon GO</title><h1>Pokémon</h1>"), "Rowlet")
+
+    def test_no_name(self):
+        self.assertIsNone(self.name("<p>nothing</p>"))
+
+
 class RefreshSafeguard(unittest.TestCase):
     def snapshot(self, rankings_per_page, pages=100):
         return {"pages_scraped": pages, "pages_failed": {}, "per_pokemon": [
