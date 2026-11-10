@@ -1,2 +1,3 @@
-requests>=2.31
-beautifulsoup4>=4.12
+# Exact versions, so the nightly refresh never installs an unreviewed release. Dependabot proposes updates.
+requests==2.34.2
+beautifulsoup4==4.15.0
