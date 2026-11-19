@@ -57,7 +57,7 @@ of that type: Mega Mewtwo Y is #2 in Ghost). They're marked `off_type` in the da
 those lists. It keeps the old file if the new scrape looks incomplete. Options:
 `--workers N` (parallel downloads, default 8), `--delay SECONDS`, `--snapshot FILE`.
 Run `refresh_iv_data.py` when new Pokémon are added to the game. Both files are
-committed, and `npm run dev` / `npm run build` copy them into the site. A nightly
+committed, and `npm run dev` / `npm run build` copy them into the site. A weekly
 GitHub Action (`.github/workflows/refresh-data.yml`) does the scrape and commits the result.
 
 ## Command line scraper
@@ -85,12 +85,12 @@ is the lower-level version of `refresh_data.py` and also takes `--keep-html`.)
 | `data/all_rankings.json` | Output of `refresh_data.py`; what the site reads |
 | `data/cache/iv_data.json` | Base stats and CP multipliers (committed) |
 | `data/movesets.json` | Moves and per-Pokémon calculator settings for the raid moveset view (committed) |
-| `.github/workflows/` | Nightly data refresh and the GitHub Pages deploy |
+| `.github/workflows/` | Weekly data refresh and the GitHub Pages deploy |
 
 ## Hosting
 
 The site is published with GitHub Pages by `.github/workflows/deploy-site.yml`: it builds `web/` and
-deploys it whenever `main` changes and after each nightly data refresh. One-time setup: repo
+deploys it whenever `main` changes and after each weekly data refresh. One-time setup: repo
 Settings → Pages → Source: GitHub Actions. The published site is public even though the repository is private.
 
 ## Raid movesets

@@ -25,7 +25,7 @@ digests of all 4096 IV spreads for every Pokémon in every league, plus rank loo
 lookups and complete search results. `npm test` checks that the TypeScript output is identical.
 
 The Python implementation was removed from `main` after the port was verified; it is kept in the
-`python-final` tag. The tests run against pinned copies of the data in `test/data/` (the Oct 2026 snapshot the fixtures were made from), so they don't change when the nightly job updates `data/`. The committed `test/fixtures.json` is what they compare against.
+`python-final` tag. The tests run against pinned copies of the data in `test/data/` (the Oct 2026 snapshot the fixtures were made from), so they don't change when the weekly job updates `data/`. The committed `test/fixtures.json` is what they compare against.
 Regenerating it (only needed if the data's shape changes) means checking `src/` out of that tag
 first; see the top of `scripts/gen_fixtures.py`.
 

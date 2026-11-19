@@ -1,4 +1,4 @@
-# Re-scrape the GO Hub rankings every night and commit them to main if they changed.
+# Re-scrape the GO Hub rankings every Monday and commit them to main if they changed.
 #
 # Needs main to accept pushes from the Actions token: i.e. no "Require a pull request before
 # merging" rule on main (Settings -> Branches). If you keep that rule, add a repo secret
@@ -11,7 +11,7 @@ name: Refresh data
 
 on:
   schedule:
-    - cron: "0 3 * * *"       # 03:00 UTC
+    - cron: "0 3 * * 1"       # Mondays, 03:00 UTC
   workflow_dispatch:
 
 permissions:
