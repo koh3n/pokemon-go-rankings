@@ -8,6 +8,7 @@ import { TierTable } from './components/TierTable'
 import { DEFAULT_CAP, IvRanker, LEVEL_CAPS, type IvData } from './lib/ivrank'
 import type { MovesetData } from './lib/movesets'
 import { parseIvs, runSearch, type SearchResult } from './lib/search'
+import { trackSearch } from './lib/track'
 import { FORM_GROUPS, type EvoNode, type Snapshot } from './lib/tiers'
 import type { ListRow } from './lib/movesets'
 
@@ -63,12 +64,13 @@ export default function App() {
   const [moveExtras, setMoveExtras] = useState<{ slug: string; name: string }[]>([])
 
   const search = useCallback(
-    (d: Loaded, query: string, ivRaw: string, capValue: number, formSet: Set<string>) => {
+    (d: Loaded, query: string, ivRaw: string, capValue: number, formSet: Set<string>, track = true) => {
       const text = query.trim()
       if (!text) return setStatus({ text: 'Type a Pokémon name or number.', error: true })
       try {
         const ivs = parseIvs(ivRaw)
         const res = runSearch(d.snap, d.ranker, text, formSet.size ? [...formSet] : 'none', ivs, capValue)
+        if (track) trackSearch(text)
         setResult(res)
         setGroup('normal')
         setMode('')
@@ -104,7 +106,7 @@ export default function App() {
         setQ(q0)
         setIvText(p.get('iv') ?? '')
         setCap(cap0)
-        search(d, q0, p.get('iv') ?? '', cap0, new Set(FORM_GROUPS))
+        search(d, q0, p.get('iv') ?? '', cap0, new Set(FORM_GROUPS), false)
       })
       .catch((e: Error) => setLoadError(e.message))
   }, [search])

@@ -44,6 +44,8 @@ jobs:
 
       - name: Build
         working-directory: web
+        env:
+          VITE_TRACK_URL: https://mooplyn-searches.mooplyn.workers.dev
         run: |
           npm ci
           npm run build
